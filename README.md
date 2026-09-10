@@ -2,6 +2,39 @@
 
 Stack: **MinIO + Parquet + Delta Lake (delta-rs) + DuckDB** — không dùng Spark, không dùng VM.
 
+## Kiến trúc hệ thống
+
+```mermaid
+flowchart TD
+    A["Ảnh giả lập<br/>(ô màu ngẫu nhiên)"] --> B["Object Storage<br/>MinIO"]
+    B --> C["Metadata dạng Parquet<br/>(image_id, size, category, ngày tạo...)"]
+    C --> D["Partitioning<br/>theo category"]
+    D --> E["Delta Lake<br/>ACID · time travel · schema evolution"]
+    E --> F["DuckDB<br/>Query / Analytics"]
+    F --> G["Benchmark<br/>dung lượng & thời gian truy vấn"]
+```
+
+MinIO đóng vai trò lưu trữ giá rẻ, co giãn cho cả ảnh thô và file Parquet.
+Delta Lake thêm transaction log lên trên Parquet để có ACID/versioning mà bản thân
+object storage không có sẵn. DuckDB đọc trực tiếp Parquet/Delta để phân tích,
+không cần dựng cluster Spark.
+
+## Sơ đồ 5 thí nghiệm bắt buộc
+
+```mermaid
+flowchart LR
+    S["Sinh metadata<br/>(01_generate_metadata.py)"] --> TN1["TN1<br/>CSV vs Parquet"]
+    S --> TN2["TN2<br/>Partition vs không"]
+    S --> TN3["TN3<br/>Tăng quy mô 100K→5M"]
+    S --> TN4["TN4<br/>Query DuckDB"]
+    S --> TN5["TN5<br/>Delta Lake ACID"]
+    TN1 --> R["results/<br/>bảng số liệu + biểu đồ"]
+    TN2 --> R
+    TN3 --> R
+    TN4 --> R
+    TN5 --> R
+```
+
 ## Yêu cầu
 - Windows/macOS/Linux + Docker Desktop
 - Python 3.9+

@@ -1,0 +1,16 @@
+# Dữ liệu sinh ra khi chạy benchmark (rất lớn, không đưa lên git)
+data/
+*.parquet
+*.csv
+!results/*.csv
+
+# Python cache & venv
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+
+# IDE settings
+.vscode/
+.idea/

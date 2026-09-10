@@ -1,0 +1,2 @@
+n_rows,no_partition_query_s,partition_query_s,speedup_x
+1000000,0.1166,0.0436,2.68

@@ -1,5 +1,6 @@
 # Dữ liệu sinh ra khi chạy benchmark (rất lớn, không đưa lên git)
-data/
+data/*
+!data/.gitkeep
 *.parquet
 *.csv
 !results/*.csv

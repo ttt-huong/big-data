@@ -1,14 +1,14 @@
 """
-Vẽ biểu đồ từ kết quả benchmark TN1/TN2/TN3 để đưa vào báo cáo/slide.
+Vẽ biểu đồ đồ họa từ kết quả Benchmark ETL/ELT (TN1 -> TN4) để chèn vào báo cáo/slide.
 
 Chạy: python 07_plot_results.py
-(cần chạy 03_tn2_partitioning.py và 04_tn3_scale_benchmark.py trước)
 """
 
 import os
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
+
 import config
 
 
@@ -20,67 +20,110 @@ def format_n(val):
     return str(val)
 
 
-def plot_tn3_scale():
-    csv_file = f"{config.LOCAL_RESULTS_DIR}/tn3_scale_benchmark.csv"
+def plot_etl_tn1_scale():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "etl_tn1_scale.csv")
     if not os.path.exists(csv_file):
-        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua vẽ biểu đồ TN3.")
-        print("Vui lòng chạy script trước: python 04_tn3_scale_benchmark.py")
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua TN1.")
         return
 
     df = pd.read_csv(csv_file)
-
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
     x_labels = [format_n(v) for v in df["n_rows"]]
 
-    axes[0].plot(x_labels, df["csv_size_mb"], marker="o", label="CSV")
-    axes[0].plot(x_labels, df["parquet_size_mb"], marker="o", label="Parquet")
-    axes[0].set_xlabel("Số dòng dữ liệu")
-    axes[0].set_ylabel("Dung lượng (MB)")
-    axes[0].set_title("Dung lượng: CSV vs Parquet theo quy mô")
-    axes[0].legend()
-    axes[0].grid(alpha=0.3)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.bar(x_labels, df["extract_time_s"], label="Extract Time (s)", color="#3498db")
+    ax.bar(x_labels, df["transform_time_s"], bottom=df["extract_time_s"], label="Transform Time (s)", color="#e74c3c")
+    ax.bar(x_labels, df["load_time_s"], bottom=df["extract_time_s"] + df["transform_time_s"], label="Load Time (s)", color="#2ecc71")
 
-    axes[1].plot(x_labels, df["read_csv_s"], marker="o", label="Đọc CSV")
-    axes[1].plot(x_labels, df["read_parquet_s"], marker="o", label="Đọc Parquet")
-    axes[1].set_xlabel("Số dòng dữ liệu")
-    axes[1].set_ylabel("Thời gian (giây)")
-    axes[1].set_title("Thời gian đọc: CSV vs Parquet theo quy mô")
-    axes[1].legend()
-    axes[1].grid(alpha=0.3)
+    ax.set_xlabel("Số lượng bản ghi (Rows)")
+    ax.set_ylabel("Thời gian xử lý (Giây)")
+    ax.set_title("TN1: Thời gian xử lý Pipeline ETL theo Quy mô dữ liệu")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
-    out_path = f"{config.LOCAL_RESULTS_DIR}/chart_tn3_scale.png"
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_etl_tn1_scale.png")
     plt.savefig(out_path, dpi=150)
-    print(f"Đã lưu biểu đồ TN3 vào {out_path}")
+    print(f"Đã lưu biểu đồ TN1 vào {out_path}")
 
 
-def plot_tn2_partition():
-    csv_file = f"{config.LOCAL_RESULTS_DIR}/tn2_partitioning.csv"
+def plot_etl_tn2_full_vs_inc():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "etl_tn2_full_vs_inc.csv")
     if not os.path.exists(csv_file):
-        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua vẽ biểu đồ TN2.")
-        print("Vui lòng chạy script trước: python 03_tn2_partitioning.py")
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua TN2.")
         return
 
     df = pd.read_csv(csv_file)
+    fig, ax1 = plt.subplots(figsize=(7, 5))
 
-    fig, ax = plt.subplots(figsize=(6, 5))
-    row = df.iloc[0]
-    ax.bar(["Không partition", "Có partition"],
-           [row["no_partition_query_s"], row["partition_query_s"]],
-           color=["#D85A30", "#1D9E75"])
-    ax.set_ylabel("Thời gian truy vấn (giây)")
-    ax.set_title(f"Hiệu quả Partitioning (n={format_n(int(row['n_rows']))})")
-    for i, v in enumerate([row["no_partition_query_s"], row["partition_query_s"]]):
-        ax.text(i, v, f"{v:.4f}s", ha="center", va="bottom")
+    color = '#1f77b4'
+    ax1.set_xlabel('Chế độ Load')
+    ax1.set_ylabel('Thời gian thực thi (Giây)', color=color)
+    bars = ax1.bar(df['load_mode'], df['total_time_s'], color=['#e67e22', '#27ae60'], width=0.4)
+    ax1.tick_params(axis='y', labelcolor=color)
 
+    for bar in bars:
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height, f'{height:.3f}s', ha='center', va='bottom')
+
+    ax1.set_title("TN2: So sánh Hiệu năng Full Load vs Incremental Load")
     plt.tight_layout()
-    out_path = f"{config.LOCAL_RESULTS_DIR}/chart_tn2_partition.png"
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_etl_tn2_full_vs_inc.png")
     plt.savefig(out_path, dpi=150)
     print(f"Đã lưu biểu đồ TN2 vào {out_path}")
 
 
+def plot_etl_tn3_clean_vs_dirty():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "etl_tn3_clean_vs_dirty.csv")
+    if not os.path.exists(csv_file):
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua TN3.")
+        return
+
+    df = pd.read_csv(csv_file)
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    ax.bar(df["dataset_type"], df["valid_records"], label="Bản ghi Sạch (Valid)", color="#2ecc71", width=0.4)
+    ax.bar(df["dataset_type"], df["error_records"], bottom=df["valid_records"], label="Bản ghi Lỗi (Error)", color="#e74c3c", width=0.4)
+
+    ax.set_ylabel("Số lượng bản ghi")
+    ax.set_title("TN3: Khả năng Phát hiện & Phân loại Dữ liệu Lỗi")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_etl_tn3_clean_vs_dirty.png")
+    plt.savefig(out_path, dpi=150)
+    print(f"Đã lưu biểu đồ TN3 vào {out_path}")
+
+
+def plot_etl_tn4_batch_size():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "etl_tn4_batch_size.csv")
+    if not os.path.exists(csv_file):
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua TN4.")
+        return
+
+    df = pd.read_csv(csv_file)
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    labels = [format_n(b) for b in df["batch_size"]]
+    ax.plot(labels, df["records_per_second"], marker="o", linewidth=2, color="#8e44ad")
+
+    ax.set_xlabel("Batch Size")
+    ax.set_ylabel("Tốc độ xử lý (Bản ghi / Giây)")
+    ax.set_title("TN4: Tốc độ xử lý theo Kích thước Batch Size")
+    ax.grid(alpha=0.3)
+
+    for i, txt in enumerate(df["records_per_second"]):
+        ax.annotate(f"{txt:,.0f} r/s", (labels[i], df["records_per_second"][i] + 500), ha="center")
+
+    plt.tight_layout()
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_etl_tn4_batch_size.png")
+    plt.savefig(out_path, dpi=150)
+    print(f"Đã lưu biểu đồ TN4 vào {out_path}")
+
+
 if __name__ == "__main__":
-    plot_tn3_scale()
-    plot_tn2_partition()
-    print("\nCác file .png trong thư mục results/ dùng để chèn trực tiếp vào báo cáo/slide.")
+    plot_etl_tn1_scale()
+    plot_etl_tn2_full_vs_inc()
+    plot_etl_tn3_clean_vs_dirty()
+    plot_etl_tn4_batch_size()
+    print("\n[THÀNH CÔNG] Tất cả các biểu đồ PNG mới đã xuất vào thư mục results/!")

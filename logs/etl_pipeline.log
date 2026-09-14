@@ -1,0 +1,428 @@
+2026-09-14 10:20:43,010 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:20:43,013 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (50,000 dòng).
+2026-09-14 10:20:43,015 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.004s)
+2026-09-14 10:20:43,144 [WARNING] [Transform] Đã phát hiện và lưu 2,490 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:20:43,151 [INFO] [Transform] Xử lý xong: 47,510 bản ghi SẠCH, 2,490 bản ghi LỖI (0.136s)
+2026-09-14 10:20:43,151 [INFO] [Load] Ghi 47,510 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:20:43,643 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=50000, last_ts=2026-08-30 22:26:59
+2026-09-14 10:20:43,644 [INFO] [Load] Hoàn tất nạp 47,510 bản ghi (0.486s)
+2026-09-14 10:20:48,655 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 10:20:48,656 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=50000, last_ts=2026-08-30 22:26:59
+2026-09-14 10:20:48,658 [INFO] [Extract] Đã trích xuất 9,960 bản ghi (0.003s)
+2026-09-14 10:20:48,820 [ERROR] Lỗi khi append error records: Unable to merge: Field created_at has incompatible types: timestamp[ms] vs timestamp[s]
+2026-09-14 10:20:48,823 [WARNING] [Transform] Đã phát hiện và lưu 160 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:20:48,827 [INFO] [Transform] Xử lý xong: 9,800 bản ghi SẠCH, 160 bản ghi LỖI (0.169s)
+2026-09-14 10:20:48,827 [INFO] [Load] Ghi 9,800 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:20:49,003 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=60000, last_ts=2026-08-30 20:27:53
+2026-09-14 10:20:49,004 [INFO] [Load] Hoàn tất nạp 9,800 bản ghi (0.174s)
+2026-09-14 10:20:57,319 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 10:20:57,320 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=60000, last_ts=2026-08-30 20:27:53
+2026-09-14 10:20:57,323 [INFO] [Extract] Đã trích xuất 9,960 bản ghi (0.004s)
+2026-09-14 10:20:57,390 [ERROR] Lỗi khi append error records: Unable to merge: Field created_at has incompatible types: timestamp[ms] vs large_string
+2026-09-14 10:20:57,393 [WARNING] [Transform] Đã phát hiện và lưu 160 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:20:57,395 [INFO] [Transform] Xử lý xong: 9,800 bản ghi SẠCH, 160 bản ghi LỖI (0.072s)
+2026-09-14 10:20:57,396 [INFO] [Load] Ghi 9,800 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:20:57,536 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=70000, last_ts=2026-08-30 20:27:53
+2026-09-14 10:20:57,536 [INFO] [Load] Hoàn tất nạp 9,800 bản ghi (0.138s)
+2026-09-14 10:21:02,218 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:02,221 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (50,000 dòng).
+2026-09-14 10:21:02,222 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.004s)
+2026-09-14 10:21:02,290 [WARNING] [Transform] Đã phát hiện và lưu 2,490 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:02,293 [INFO] [Transform] Xử lý xong: 47,510 bản ghi SẠCH, 2,490 bản ghi LỖI (0.070s)
+2026-09-14 10:21:02,293 [INFO] [Load] Ghi 47,510 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:02,444 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=50000, last_ts=2026-08-30 22:26:59
+2026-09-14 10:21:02,445 [INFO] [Load] Hoàn tất nạp 47,510 bản ghi (0.147s)
+2026-09-14 10:21:05,637 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 10:21:05,638 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=50000, last_ts=2026-08-30 22:26:59
+2026-09-14 10:21:05,640 [INFO] [Extract] Đã trích xuất 9,960 bản ghi (0.003s)
+2026-09-14 10:21:05,709 [WARNING] [Transform] Đã phát hiện và lưu 160 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:05,711 [INFO] [Transform] Xử lý xong: 9,800 bản ghi SẠCH, 160 bản ghi LỖI (0.071s)
+2026-09-14 10:21:05,712 [INFO] [Load] Ghi 9,800 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:05,839 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=60000, last_ts=2026-08-30 20:27:53
+2026-09-14 10:21:05,839 [INFO] [Load] Hoàn tất nạp 9,800 bản ghi (0.124s)
+2026-09-14 10:21:27,129 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:27,131 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 10:21:27,133 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.003s)
+2026-09-14 10:21:27,260 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:27,263 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.130s)
+2026-09-14 10:21:27,263 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:27,441 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 10:21:27,441 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.174s)
+2026-09-14 10:21:28,151 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:28,162 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 10:21:28,168 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.017s)
+2026-09-14 10:21:28,614 [WARNING] [Transform] Đã phát hiện và lưu 24,850 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:28,629 [INFO] [Transform] Xử lý xong: 475,150 bản ghi SẠCH, 24,850 bản ghi LỖI (0.458s)
+2026-09-14 10:21:28,630 [INFO] [Load] Ghi 475,150 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:29,099 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 10:21:29,099 [INFO] [Load] Hoàn tất nạp 475,150 bản ghi (0.466s)
+2026-09-14 10:21:30,549 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:30,565 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 10:21:30,576 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.028s)
+2026-09-14 10:21:31,504 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:31,524 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (0.945s)
+2026-09-14 10:21:31,524 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:32,213 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 10:21:32,213 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (0.683s)
+2026-09-14 10:21:33,843 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:33,865 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 10:21:33,877 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.034s)
+2026-09-14 10:21:35,728 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:35,752 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (1.872s)
+2026-09-14 10:21:35,753 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:36,528 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 10:21:36,528 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (0.771s)
+2026-09-14 10:21:36,577 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 10:21:36,592 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 10:21:36,594 [INFO] [Extract] Đã trích xuất 19,800 bản ghi (0.017s)
+2026-09-14 10:21:36,768 [WARNING] [Transform] Đã phát hiện và lưu 795 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:36,771 [INFO] [Transform] Xử lý xong: 19,005 bản ghi SẠCH, 795 bản ghi LỖI (0.176s)
+2026-09-14 10:21:36,771 [INFO] [Load] Ghi 19,005 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:36,910 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1020000, last_ts=2026-08-30 23:53:56
+2026-09-14 10:21:36,910 [INFO] [Load] Hoàn tất nạp 19,005 bản ghi (0.136s)
+2026-09-14 10:21:37,572 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:37,580 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 10:21:37,586 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.014s)
+2026-09-14 10:21:37,771 [INFO] [Transform] Xử lý xong: 500,000 bản ghi SẠCH, 0 bản ghi LỖI (0.183s)
+2026-09-14 10:21:37,771 [INFO] [Load] Ghi 500,000 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:38,280 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 10:21:38,280 [INFO] [Load] Hoàn tất nạp 500,000 bản ghi (0.505s)
+2026-09-14 10:21:39,029 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:39,040 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 10:21:39,046 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.017s)
+2026-09-14 10:21:39,735 [WARNING] [Transform] Đã phát hiện và lưu 49,454 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:39,747 [INFO] [Transform] Xử lý xong: 450,546 bản ghi SẠCH, 49,454 bản ghi LỖI (0.699s)
+2026-09-14 10:21:39,747 [INFO] [Load] Ghi 450,546 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:40,198 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 10:21:40,198 [INFO] [Load] Hoàn tất nạp 450,546 bản ghi (0.446s)
+2026-09-14 10:21:40,507 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:40,510 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 10:21:40,513 [INFO] [Extract] Áp dụng batch_size=1,000 trên tổng 200,000 bản ghi.
+2026-09-14 10:21:40,514 [INFO] [Extract] Đã trích xuất 1,000 bản ghi (0.007s)
+2026-09-14 10:21:40,752 [WARNING] [Transform] Đã phát hiện và lưu 40 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:40,755 [INFO] [Transform] Xử lý xong: 960 bản ghi SẠCH, 40 bản ghi LỖI (0.240s)
+2026-09-14 10:21:40,755 [INFO] [Load] Ghi 960 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:40,873 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=190105, last_ts=2026-08-30 13:22:17
+2026-09-14 10:21:40,874 [INFO] [Load] Hoàn tất nạp 960 bản ghi (0.115s)
+2026-09-14 10:21:40,874 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:40,878 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 10:21:40,881 [INFO] [Extract] Áp dụng batch_size=10,000 trên tổng 200,000 bản ghi.
+2026-09-14 10:21:40,882 [INFO] [Extract] Đã trích xuất 10,000 bản ghi (0.008s)
+2026-09-14 10:21:41,106 [WARNING] [Transform] Đã phát hiện và lưu 382 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:41,108 [INFO] [Transform] Xử lý xong: 9,618 bản ghi SẠCH, 382 bản ghi LỖI (0.226s)
+2026-09-14 10:21:41,108 [INFO] [Load] Ghi 9,618 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:41,274 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=198873, last_ts=2026-08-30 13:22:17
+2026-09-14 10:21:41,274 [INFO] [Load] Hoàn tất nạp 9,618 bản ghi (0.161s)
+2026-09-14 10:21:41,275 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:21:41,280 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 10:21:41,283 [INFO] [Extract] Áp dụng batch_size=50,000 trên tổng 200,000 bản ghi.
+2026-09-14 10:21:41,287 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.012s)
+2026-09-14 10:21:41,618 [WARNING] [Transform] Đã phát hiện và lưu 2,148 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:21:41,623 [INFO] [Transform] Xử lý xong: 47,852 bản ghi SẠCH, 2,148 bản ghi LỖI (0.334s)
+2026-09-14 10:21:41,623 [INFO] [Load] Ghi 47,852 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:21:41,787 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=199860, last_ts=2026-08-30 23:55:38
+2026-09-14 10:21:41,787 [INFO] [Load] Hoàn tất nạp 47,852 bản ghi (0.160s)
+2026-09-14 10:40:51,363 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:40:51,366 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 10:40:51,367 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.003s)
+2026-09-14 10:40:51,666 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:40:51,670 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.302s)
+2026-09-14 10:40:51,670 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:40:51,839 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 10:40:51,839 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.166s)
+2026-09-14 10:40:57,946 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 10:40:57,947 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 10:40:57,950 [INFO] [Extract] Đã trích xuất 19,920 bản ghi (0.004s)
+2026-09-14 10:40:58,248 [WARNING] [Transform] Đã phát hiện và lưu 319 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:40:58,250 [INFO] [Transform] Xử lý xong: 19,601 bản ghi SẠCH, 319 bản ghi LỖI (0.300s)
+2026-09-14 10:40:58,251 [INFO] [Load] Ghi 19,601 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:40:58,404 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=120000, last_ts=2026-08-30 23:53:56
+2026-09-14 10:40:58,405 [INFO] [Load] Hoàn tất nạp 19,601 bản ghi (0.151s)
+2026-09-14 10:41:13,776 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:41:13,779 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 10:41:13,781 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.005s)
+2026-09-14 10:41:14,125 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:41:14,129 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.347s)
+2026-09-14 10:41:14,129 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:41:14,339 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 10:41:14,339 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.205s)
+2026-09-14 10:41:15,096 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:41:15,106 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 10:41:15,114 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.019s)
+2026-09-14 10:41:15,871 [WARNING] [Transform] Đã phát hiện và lưu 24,850 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:41:15,885 [INFO] [Transform] Xử lý xong: 475,150 bản ghi SẠCH, 24,850 bản ghi LỖI (0.769s)
+2026-09-14 10:41:15,886 [INFO] [Load] Ghi 475,150 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:41:16,333 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 10:41:16,333 [INFO] [Load] Hoàn tất nạp 475,150 bản ghi (0.440s)
+2026-09-14 10:41:17,877 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 10:41:17,896 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 10:41:17,909 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.031s)
+2026-09-14 10:41:19,141 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 10:41:19,163 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (1.251s)
+2026-09-14 10:41:19,163 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 10:41:20,035 [WARNING] [Load] Thất bại lần 1: Failed to parse parquet: External: Generic S3 error: Error performing PUT http://localhost:9000/lakehouse-metadata/clean_metadata_delta/category%3Ddong_vat/part-00000-592255b2-bb00-46ed-98cc-33a09997add1-c000.snappy.parquet?partNumber=1&uploadId=MjBlNTVhNmEtNTY0MS00ZGQxLWJlODItM2MxNTc5MTVhYTkzLmM3MjEzODNhLTU5Y2UtNDUwYy04YzYxLTNhMjAwMjgzMTY4YngxNzg5MzU3MjgwMDA4MTQxNjYz in 1.7536ms - HTTP error: error sending request. Đang thử lại...
+2026-09-14 11:22:45,526 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:22:45,528 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 11:22:45,530 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.004s)
+2026-09-14 11:22:46,088 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:22:46,092 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.562s)
+2026-09-14 11:22:46,093 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:22:46,668 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:22:46,669 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.565s)
+2026-09-14 11:22:56,207 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 11:22:56,210 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:22:56,214 [INFO] [Extract] Đã trích xuất 19,920 bản ghi (0.006s)
+2026-09-14 11:22:56,600 [WARNING] [Transform] Đã phát hiện và lưu 319 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:22:56,602 [INFO] [Transform] Xử lý xong: 19,601 bản ghi SẠCH, 319 bản ghi LỖI (0.388s)
+2026-09-14 11:22:56,602 [INFO] [Load] Ghi 19,601 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:22:56,757 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=120000, last_ts=2026-08-30 23:53:56
+2026-09-14 11:22:56,758 [INFO] [Load] Hoàn tất nạp 19,601 bản ghi (0.150s)
+2026-09-14 11:23:46,024 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:23:46,027 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 11:23:46,028 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.003s)
+2026-09-14 11:23:46,487 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:23:46,491 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.463s)
+2026-09-14 11:23:46,491 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:23:46,729 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:23:46,730 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.233s)
+2026-09-14 11:23:47,511 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:23:47,519 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:23:47,525 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.014s)
+2026-09-14 11:23:48,492 [WARNING] [Transform] Đã phát hiện và lưu 24,850 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:23:48,512 [INFO] [Transform] Xử lý xong: 475,150 bản ghi SẠCH, 24,850 bản ghi LỖI (0.985s)
+2026-09-14 11:23:48,513 [INFO] [Load] Ghi 475,150 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:23:49,360 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 11:23:49,360 [INFO] [Load] Hoàn tất nạp 475,150 bản ghi (0.829s)
+2026-09-14 11:23:52,253 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:23:52,277 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 11:23:52,297 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.043s)
+2026-09-14 11:23:54,526 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:23:54,589 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (2.289s)
+2026-09-14 11:23:54,590 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:23:56,207 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:23:56,207 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (1.604s)
+2026-09-14 11:23:58,750 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:23:58,776 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 11:23:58,792 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.042s)
+2026-09-14 11:24:00,750 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:00,782 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (1.986s)
+2026-09-14 11:24:00,783 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:02,178 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:24:02,179 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (1.383s)
+2026-09-14 11:24:02,271 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 11:24:02,286 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:24:02,294 [INFO] [Extract] Đã trích xuất 19,800 bản ghi (0.023s)
+2026-09-14 11:24:03,045 [WARNING] [Transform] Đã phát hiện và lưu 795 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:03,050 [INFO] [Transform] Xử lý xong: 19,005 bản ghi SẠCH, 795 bản ghi LỖI (0.755s)
+2026-09-14 11:24:03,050 [INFO] [Load] Ghi 19,005 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:03,280 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1020000, last_ts=2026-08-30 23:53:56
+2026-09-14 11:24:03,281 [INFO] [Load] Hoàn tất nạp 19,005 bản ghi (0.221s)
+2026-09-14 11:24:04,529 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:24:04,541 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:24:04,551 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.021s)
+2026-09-14 11:24:04,826 [INFO] [Transform] Xử lý xong: 500,000 bản ghi SẠCH, 0 bản ghi LỖI (0.272s)
+2026-09-14 11:24:04,826 [INFO] [Load] Ghi 500,000 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:05,360 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 11:24:05,360 [INFO] [Load] Hoàn tất nạp 500,000 bản ghi (0.527s)
+2026-09-14 11:24:06,728 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:24:06,739 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:24:06,750 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.022s)
+2026-09-14 11:24:08,179 [WARNING] [Transform] Đã phát hiện và lưu 49,454 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:08,199 [INFO] [Transform] Xử lý xong: 450,546 bản ghi SẠCH, 49,454 bản ghi LỖI (1.447s)
+2026-09-14 11:24:08,200 [INFO] [Load] Ghi 450,546 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:08,828 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 11:24:08,828 [INFO] [Load] Hoàn tất nạp 450,546 bản ghi (0.620s)
+2026-09-14 11:24:09,397 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:24:09,404 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:24:09,410 [INFO] [Extract] Áp dụng batch_size=1,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:24:09,413 [INFO] [Extract] Đã trích xuất 1,000 bản ghi (0.015s)
+2026-09-14 11:24:10,192 [WARNING] [Transform] Đã phát hiện và lưu 40 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:10,195 [INFO] [Transform] Xử lý xong: 960 bản ghi SẠCH, 40 bản ghi LỖI (0.781s)
+2026-09-14 11:24:10,196 [INFO] [Load] Ghi 960 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:10,372 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=190105, last_ts=2026-08-30 13:22:17
+2026-09-14 11:24:10,372 [INFO] [Load] Hoàn tất nạp 960 bản ghi (0.169s)
+2026-09-14 11:24:10,405 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:24:10,413 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:24:10,417 [INFO] [Extract] Áp dụng batch_size=10,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:24:10,419 [INFO] [Extract] Đã trích xuất 10,000 bản ghi (0.014s)
+2026-09-14 11:24:11,333 [WARNING] [Transform] Đã phát hiện và lưu 382 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:11,339 [INFO] [Transform] Xử lý xong: 9,618 bản ghi SẠCH, 382 bản ghi LỖI (0.919s)
+2026-09-14 11:24:11,340 [INFO] [Load] Ghi 9,618 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:11,547 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=198873, last_ts=2026-08-30 13:22:17
+2026-09-14 11:24:11,547 [INFO] [Load] Hoàn tất nạp 9,618 bản ghi (0.201s)
+2026-09-14 11:24:11,548 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:24:11,554 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:24:11,559 [INFO] [Extract] Áp dụng batch_size=50,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:24:11,563 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.014s)
+2026-09-14 11:24:12,495 [WARNING] [Transform] Đã phát hiện và lưu 2,148 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:24:12,500 [INFO] [Transform] Xử lý xong: 47,852 bản ghi SẠCH, 2,148 bản ghi LỖI (0.936s)
+2026-09-14 11:24:12,500 [INFO] [Load] Ghi 47,852 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:24:12,731 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=199860, last_ts=2026-08-30 23:55:38
+2026-09-14 11:24:12,731 [INFO] [Load] Hoàn tất nạp 47,852 bản ghi (0.223s)
+2026-09-14 11:34:06,949 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:06,952 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 11:34:06,953 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.004s)
+2026-09-14 11:34:07,491 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:07,494 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.541s)
+2026-09-14 11:34:07,494 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:07,688 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:34:07,688 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.190s)
+2026-09-14 11:34:13,547 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 11:34:13,548 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:34:13,551 [INFO] [Extract] Đã trích xuất 19,920 bản ghi (0.004s)
+2026-09-14 11:34:14,026 [WARNING] [Transform] Đã phát hiện và lưu 319 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:14,028 [INFO] [Transform] Xử lý xong: 19,601 bản ghi SẠCH, 319 bản ghi LỖI (0.477s)
+2026-09-14 11:34:14,028 [INFO] [Load] Ghi 19,601 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:14,191 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=120000, last_ts=2026-08-30 23:53:56
+2026-09-14 11:34:14,192 [INFO] [Load] Hoàn tất nạp 19,601 bản ghi (0.157s)
+2026-09-14 11:34:23,325 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:23,327 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (100,000 dòng).
+2026-09-14 11:34:23,328 [INFO] [Extract] Đã trích xuất 100,000 bản ghi (0.003s)
+2026-09-14 11:34:23,863 [WARNING] [Transform] Đã phát hiện và lưu 4,975 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:23,868 [INFO] [Transform] Xử lý xong: 95,025 bản ghi SẠCH, 4,975 bản ghi LỖI (0.539s)
+2026-09-14 11:34:23,868 [INFO] [Load] Ghi 95,025 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:24,067 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=100000, last_ts=2026-08-30 23:33:39
+2026-09-14 11:34:24,067 [INFO] [Load] Hoàn tất nạp 95,025 bản ghi (0.192s)
+2026-09-14 11:34:24,764 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:24,773 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:34:24,780 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.016s)
+2026-09-14 11:34:25,644 [WARNING] [Transform] Đã phát hiện và lưu 24,850 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:25,655 [INFO] [Transform] Xử lý xong: 475,150 bản ghi SẠCH, 24,850 bản ghi LỖI (0.872s)
+2026-09-14 11:34:25,655 [INFO] [Load] Ghi 475,150 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:26,155 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 11:34:26,155 [INFO] [Load] Hoàn tất nạp 475,150 bản ghi (0.493s)
+2026-09-14 11:34:27,576 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:27,594 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 11:34:27,609 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.033s)
+2026-09-14 11:34:28,780 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:28,801 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (1.189s)
+2026-09-14 11:34:28,802 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:30,029 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:34:30,029 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (1.218s)
+2026-09-14 11:34:31,802 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:31,821 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000,000 dòng).
+2026-09-14 11:34:31,835 [INFO] [Extract] Đã trích xuất 1,000,000 bản ghi (0.032s)
+2026-09-14 11:34:33,418 [WARNING] [Transform] Đã phát hiện và lưu 49,730 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:33,445 [INFO] [Transform] Xử lý xong: 950,270 bản ghi SẠCH, 49,730 bản ghi LỖI (1.608s)
+2026-09-14 11:34:33,446 [INFO] [Load] Ghi 950,270 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:34,275 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:34:34,275 [INFO] [Load] Hoàn tất nạp 950,270 bản ghi (0.823s)
+2026-09-14 11:34:34,337 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: INCREMENTAL) <===
+2026-09-14 11:34:34,355 [INFO] [Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id=1000000, last_ts=2026-08-30 23:58:29
+2026-09-14 11:34:34,358 [INFO] [Extract] Đã trích xuất 19,800 bản ghi (0.021s)
+2026-09-14 11:34:34,936 [WARNING] [Transform] Đã phát hiện và lưu 795 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:34,938 [INFO] [Transform] Xử lý xong: 19,005 bản ghi SẠCH, 795 bản ghi LỖI (0.580s)
+2026-09-14 11:34:34,938 [INFO] [Load] Ghi 19,005 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:35,145 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1020000, last_ts=2026-08-30 23:53:56
+2026-09-14 11:34:35,145 [INFO] [Load] Hoàn tất nạp 19,005 bản ghi (0.202s)
+2026-09-14 11:34:36,219 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:36,237 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:34:36,257 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.033s)
+2026-09-14 11:34:36,579 [INFO] [Transform] Xử lý xong: 500,000 bản ghi SẠCH, 0 bản ghi LỖI (0.319s)
+2026-09-14 11:34:36,579 [INFO] [Load] Ghi 500,000 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:37,218 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=500000, last_ts=2026-08-30 23:51:58
+2026-09-14 11:34:37,218 [INFO] [Load] Hoàn tất nạp 500,000 bản ghi (0.631s)
+2026-09-14 11:34:38,384 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:38,398 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (500,000 dòng).
+2026-09-14 11:34:38,405 [INFO] [Extract] Đã trích xuất 500,000 bản ghi (0.021s)
+2026-09-14 11:34:38,931 [ERROR] Lỗi hệ thống khi chạy Pipeline: Unable to allocate 3.44 MiB for an array with shape (450546, 1) and data type datetime64[s]
+Traceback (most recent call last):
+  File "D:\Workspace\TBDD\big-data\main_pipeline.py", line 41, in run_pipeline
+    clean_df = transform_data(extracted_df, metrics=metrics)
+  File "D:\Workspace\TBDD\big-data\pipeline\transform.py", line 33, in transform_data
+    clean_df, error_df = validate_and_clean(df)
+                         ~~~~~~~~~~~~~~~~~~^^^^
+  File "D:\Workspace\TBDD\big-data\pipeline\validation.py", line 56, in validate_and_clean
+    clean_df = df[~is_error].copy()
+               ~~^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\frame.py", line 4369, in __getitem__
+    return self._getitem_bool_array(key)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\frame.py", line 4431, in _getitem_bool_array
+    return self.take(indexer, axis=0)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\generic.py", line 4089, in take
+    new_data = self._mgr.take(
+        indices,
+        axis=self._get_block_manager_axis(axis),
+        verify=True,
+    )
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\internals\managers.py", line 1090, in take
+    return self.reindex_indexer(
+           ~~~~~~~~~~~~~~~~~~~~^
+        new_axis=new_labels,
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        allow_dups=True,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\internals\managers.py", line 879, in reindex_indexer
+    blk.take_nd(
+    ~~~~~~~~~~~^
+        indexer,
+        ^^^^^^^^
+    ...<3 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\internals\blocks.py", line 1015, in take_nd
+    new_values = algos.take_nd(
+        values, indexer, axis=axis, allow_fill=allow_fill, fill_value=fill_value
+    )
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\array_algos\take.py", line 108, in take_nd
+    return arr.take(
+           ~~~~~~~~^
+        indexer, fill_value=fill_value, allow_fill=allow_fill, axis=axis
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\arrays\datetimelike.py", line 2584, in take
+    result = super().take(
+        indices=indices, allow_fill=allow_fill, fill_value=fill_value, axis=axis
+    )
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\arrays\_mixins.py", line 172, in take
+    new_data = take(
+        self._ndarray,
+    ...<3 lines>...
+        axis=axis,
+    )
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\algorithms.py", line 1210, in take
+    result = take_nd(
+        arr,  # type: ignore[arg-type]
+    ...<3 lines>...
+        fill_value=fill_value,
+    )
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\array_algos\take.py", line 115, in take_nd
+    return _take_nd_ndarray(arr, indexer, axis, fill_value, allow_fill)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\core\array_algos\take.py", line 155, in _take_nd_ndarray
+    out = np.empty(out_shape, dtype=dtype)
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 3.44 MiB for an array with shape (450546, 1) and data type datetime64[s]
+2026-09-14 11:34:39,535 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:39,545 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:34:39,548 [INFO] [Extract] Áp dụng batch_size=1,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:34:39,550 [INFO] [Extract] Đã trích xuất 1,000 bản ghi (0.014s)
+2026-09-14 11:34:40,731 [WARNING] [Transform] Đã phát hiện và lưu 40 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:40,734 [INFO] [Transform] Xử lý xong: 960 bản ghi SẠCH, 40 bản ghi LỖI (1.184s)
+2026-09-14 11:34:40,734 [INFO] [Load] Ghi 960 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:40,975 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=190105, last_ts=2026-08-30 13:22:17
+2026-09-14 11:34:40,975 [INFO] [Load] Hoàn tất nạp 960 bản ghi (0.231s)
+2026-09-14 11:34:40,999 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:41,003 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:34:41,007 [INFO] [Extract] Áp dụng batch_size=10,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:34:41,009 [INFO] [Extract] Đã trích xuất 10,000 bản ghi (0.010s)
+2026-09-14 11:34:41,921 [WARNING] [Transform] Đã phát hiện và lưu 382 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:41,926 [INFO] [Transform] Xử lý xong: 9,618 bản ghi SẠCH, 382 bản ghi LỖI (0.916s)
+2026-09-14 11:34:41,926 [INFO] [Load] Ghi 9,618 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:42,155 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=198873, last_ts=2026-08-30 13:22:17
+2026-09-14 11:34:42,157 [INFO] [Load] Hoàn tất nạp 9,618 bản ghi (0.222s)
+2026-09-14 11:34:42,159 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-14 11:34:42,164 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (200,000 dòng).
+2026-09-14 11:34:42,168 [INFO] [Extract] Áp dụng batch_size=50,000 trên tổng 200,000 bản ghi.
+2026-09-14 11:34:42,171 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.012s)
+2026-09-14 11:34:43,297 [WARNING] [Transform] Đã phát hiện và lưu 2,148 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-14 11:34:43,301 [INFO] [Transform] Xử lý xong: 47,852 bản ghi SẠCH, 2,148 bản ghi LỖI (1.128s)
+2026-09-14 11:34:43,301 [INFO] [Load] Ghi 47,852 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-14 11:34:43,534 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=199860, last_ts=2026-08-30 23:55:38
+2026-09-14 11:34:43,534 [INFO] [Load] Hoàn tất nạp 47,852 bản ghi (0.225s)

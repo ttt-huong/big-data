@@ -1,0 +1,4 @@
+n_rows,extract_time_s,transform_time_s,load_time_s,total_time_s,valid_records,error_records
+100000,0.003,0.539,0.192,0.742,95025,4975
+500000,0.016,0.872,0.493,1.391,475150,24850
+1000000,0.033,1.189,1.218,2.454,950270,49730

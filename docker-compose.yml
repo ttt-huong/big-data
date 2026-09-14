@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: lakehouse-minio
     ports:
       - "9000:9000"   # API endpoint

@@ -1,0 +1,3 @@
+load_mode,extracted_records,loaded_records,total_time_s
+Full Load,1000000,950270,2.473
+Incremental Load,19800,19005,0.808

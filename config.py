@@ -37,10 +37,17 @@ if hasattr(sys.stderr, "reconfigure"):
 # --- Thư mục local dùng làm nơi trung chuyển trước khi upload ---
 LOCAL_DATA_DIR = "./data"
 LOCAL_RESULTS_DIR = "./results"
+LOCAL_LOGS_DIR = "./logs"
 
 # Tự động tạo thư mục dữ liệu và kết quả nếu chưa có
 os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
 os.makedirs(LOCAL_RESULTS_DIR, exist_ok=True)
+os.makedirs(LOCAL_LOGS_DIR, exist_ok=True)
+
+# --- ETL Pipeline Storage Paths ---
+WATERMARK_FILE = os.path.join(LOCAL_DATA_DIR, "watermark.json")
+ERROR_RECORDS_PATH = os.path.join(LOCAL_DATA_DIR, "error_records.parquet")
+TARGET_DELTA_URI = f"s3://{BUCKET_METADATA}/clean_metadata_delta"
 
 # --- Thiết kế metadata ảnh ---
 # image_id, filename, file_size, width, height, format, category, created_at, year, month

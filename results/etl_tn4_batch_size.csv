@@ -1,0 +1,4 @@
+batch_size,extracted_records,total_time_s,records_per_second
+1000,1000,1.44,694.4
+10000,10000,1.159,8628.1
+50000,50000,1.376,36337.2

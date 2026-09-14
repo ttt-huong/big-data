@@ -1,2 +1,2 @@
 n_rows,csv_size_mb,parquet_size_mb,write_csv_s,write_parquet_s,read_csv_s,read_parquet_s,filter_csv_s,filter_parquet_s
-1000000,76.65,22.84,2.871,0.482,1.985,0.192,2.123,0.091
+100000,7.57,2.88,0.44,0.141,0.373,0.552,0.324,0.029

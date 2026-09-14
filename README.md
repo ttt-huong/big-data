@@ -1,112 +1,130 @@
-# P4: Lakehouse trên Object Storage cho dữ liệu ảnh quy mô lớn
+# ĐỒ ÁN: XÂY DỰNG PIPELINE ETL/ELT XỬ LÝ VÀ TÍCH HỢP DỮ LIỆU QUY MÔ LỚN
 
-Stack: **MinIO + Parquet + Delta Lake (delta-rs) + DuckDB** — không dùng Spark, không dùng VM.
+> Stack công nghệ: **Python + MinIO (S3 Object Storage) + Parquet + Delta Lake + DuckDB** (Không dùng Spark cluster, không dùng Airflow/Kafka cồng kềnh, chạy mượt trên laptop).
+> *Lưu ý*: `boto3`, `Pillow` và `Faker` được khai báo trong `requirements.txt` nhưng **không được sử dụng** trong mã nguồn.
 
-## Kiến trúc hệ thống
+---
+
+## 🎯 Kiến trúc Pipeline ETL
 
 ```mermaid
 flowchart TD
-    A["Ảnh giả lập<br/>(ô màu ngẫu nhiên)"] --> B["Object Storage<br/>MinIO"]
-    B --> C["Metadata dạng Parquet<br/>(image_id, size, category, ngày tạo...)"]
-    C --> D["Partitioning<br/>theo category"]
-    D --> E["Delta Lake<br/>ACID · time travel · schema evolution"]
-    E --> F["DuckDB<br/>Query / Analytics"]
-    F --> G["Benchmark<br/>dung lượng & thời gian truy vấn"]
+    Gen["Data Generator<br/>(Clean & Dirty Data)"] --> Raw["Source Data<br/>(CSV / Parquet / Raw Data)"]
+    Raw --> Ext["EXTRACT Layer<br/>(Full Load / Incremental via Watermark)"]
+    Ext --> Trans["TRANSFORM & VALIDATE Layer<br/>(Clean, Ép kiểu, Deduplicate, Bắt lỗi)"]
+    
+    Trans -->|Valid Clean Data| Load["LOAD Layer<br/>(Delta Lake / MinIO S3 Target)"]
+    Trans -->|Invalid Error Data| ErrStore["ERROR RECORDS STORE<br/>(data/error_records.parquet)"]
+    
+    Load --> Duck["DuckDB SQL Analytics Engine"]
+    Load & ErrStore --> Bench["Benchmark Suite & Visualizer<br/>(4 Thí nghiệm + Biểu đồ PNG)"]
 ```
 
-MinIO đóng vai trò lưu trữ giá rẻ, co giãn cho cả ảnh thô và file Parquet.
-Delta Lake thêm transaction log lên trên Parquet để có ACID/versioning mà bản thân
-object storage không có sẵn. DuckDB đọc trực tiếp Parquet/Delta để phân tích,
-không cần dựng cluster Spark.
+---
 
-## Sơ đồ 5 thí nghiệm bắt buộc
+## 📂 Cấu trúc thư mục dự án
 
-```mermaid
-flowchart LR
-    S["Sinh metadata<br/>(01_generate_metadata.py)"] --> TN1["TN1<br/>CSV vs Parquet"]
-    S --> TN2["TN2<br/>Partition vs không"]
-    S --> TN3["TN3<br/>Tăng quy mô 100K→5M"]
-    S --> TN4["TN4<br/>Query DuckDB"]
-    S --> TN5["TN5<br/>Delta Lake ACID"]
-    TN1 --> R["results/<br/>bảng số liệu + biểu đồ"]
-    TN2 --> R
-    TN3 --> R
-    TN4 --> R
-    TN5 --> R
+```
+big-data/
+├── config.py                 # Cấu hình MinIO, đường dẫn local & các hằng số
+├── docker-compose.yml        # Khởi chạy MinIO S3 Object Storage
+├── main_pipeline.py          # Entrypoint chạy Pipeline ETL (Full / Incremental)
+├── query_analytics.py        # Truy vấn DuckDB SQL trên Target Store & Error Records
+├── 00_setup_minio.py         # Khởi tạo MinIO Buckets & Ảnh mẫu demo
+├── 07_plot_results.py        # Tự động xuất biểu đồ PNG kết quả benchmark
+├── requirements.txt          # Danh sách thư viện Python
+│
+├── generator/                # Module sinh dữ liệu giả lập quy mô lớn
+│   ├── __init__.py
+│   └── data_generator.py     # Sinh dữ liệu sạch & dữ liệu bẩn (Dirty Data)
+│
+├── pipeline/                 # Các tầng chính của Pipeline ETL
+│   ├── __init__.py
+│   ├── extract.py            # Layer Extract (Full Load & Incremental Load Watermark)
+│   ├── transform.py          # Layer Transform & Enrich dữ liệu
+│   ├── validation.py         # Quy tắc kiểm soát chất lượng dữ liệu (Quality Rules)
+│   ├── load.py               # Layer Load ghi vào Delta Lake trên MinIO (có Retry)
+│   └── logging_utils.py      # Tracker thống kê thời gian & ghi Log hệ thống
+│
+├── benchmark/                # Suite đánh giá hiệu năng
+│   ├── __init__.py
+│   └── run_benchmarks.py     # Thực thi 4 bài thí nghiệm ETL tự động
+│
+├── data/                     # Thư mục chứa dữ liệu thô, watermark & error records
+├── logs/                     # File log quá trình chạy etl_pipeline.log
+└── results/                  # File số liệu .csv và biểu đồ đồ họa .png
 ```
 
-## Yêu cầu
-- Windows/macOS/Linux + Docker Desktop
-- Python 3.9+
+---
 
-## Cài đặt
+## ⚙️ Hướng dẫn cài đặt & Khởi chạy
 
-```bash
-# 1. Khởi động MinIO
+### 1. Khởi động MinIO (S3 Object Storage)
+```powershell
 docker compose up -d
+```
+*Giao diện MinIO Console*: `http://localhost:9001` (Username: `minioadmin` / Password: `minioadmin`).
 
-# 2. Cài thư viện Python
+### 2. Cài đặt thư viện Python
+```powershell
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
+.\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Mở http://localhost:9001 (user/pass: `minioadmin` / `minioadmin`) để xem giao diện MinIO.
-Không cần tự tạo bucket tay — script `00_setup_minio.py` sẽ tự tạo.
-
-## Chạy lần lượt theo đúng 5 thí nghiệm
-
-Tất cả lệnh chạy từ thư mục gốc project.
-
-```bash
-# Bước 0: Tạo bucket + upload ảnh tối giản (chứng minh Object Storage)
+### 3. Chuẩn bị Object Storage MinIO
+```powershell
 python 00_setup_minio.py
-
-# Bước 1: Sinh metadata mẫu (dùng cho TN4, TN5)
-python 01_generate_metadata.py --n 1000000
-
-# TN1: CSV vs Parquet
-python 02_tn1_csv_vs_parquet.py --n 1000000
-
-# TN2: Partition vs không partition
-python 03_tn2_partitioning.py --n 1000000
-
-# TN3: Benchmark theo quy mô tăng dần (chạy TN1 lặp lại ở nhiều mức)
-python 04_tn3_scale_benchmark.py
-
-# TN4: Truy vấn phân tích bằng DuckDB
-python 05_tn4_query_duckdb.py --n 1000000
-
-# TN5: Delta Lake - ACID, time travel, schema evolution
-python 06_tn5_delta_lake.py --n 100000
-
-# Vẽ biểu đồ tổng hợp cho báo cáo/slide
-python 07_plot_results.py
 ```
 
-## Lưu ý quan trọng
+---
 
-- **Quy mô dữ liệu**: mặc định chạy tới 5 triệu dòng (`config.SCALE_LEVELS`). Nếu máy yếu,
-  sửa file `config.py`, để `SCALE_LEVELS = [100_000, 1_000_000]` là đủ thuyết phục,
-  không bắt buộc phải lên 10 triệu.
-- **TN5 nên chạy với quy mô nhỏ** (100K) vì thao tác UPDATE/append trên Delta table
-  chưa được tối ưu tốc độ như benchmark thuần Parquet.
-- **Kết quả** (số liệu CSV + biểu đồ PNG) nằm trong thư mục `results/` — dùng trực tiếp
-  để chèn vào báo cáo Word và slide thuyết trình.
-- **Ảnh trong MinIO**: chỉ là ảnh tối giản (ô màu ngẫu nhiên), đúng theo phạm vi đề cương —
-  không cần và không nên thu thập ảnh thật số lượng lớn.
+## 🚀 Các lệnh thực thi Pipeline ETL
 
-## Bảng ánh xạ Thí nghiệm ↔ File kết quả
+### 1. Chạy Full Load Pipeline
+Chạy Full Load với 100.000 bản ghi thô (tỷ lệ dữ liệu có lỗi 5%):
+```powershell
+python main_pipeline.py --mode full --n 100000 --error-ratio 0.05
+```
 
-| Thí nghiệm | Script | File kết quả |
-|---|---|---|
-| TN1 - CSV vs Parquet | `02_tn1_csv_vs_parquet.py` | `results/tn1_csv_vs_parquet.csv` |
-| TN2 - Partition | `03_tn2_partitioning.py` | `results/tn2_partitioning.csv`, `chart_tn2_partition.png` |
-| TN3 - Tăng quy mô | `04_tn3_scale_benchmark.py` | `results/tn3_scale_benchmark.csv`, `chart_tn3_scale.png` |
-| TN4 - Query | `05_tn4_query_duckdb.py` | in trực tiếp ra màn hình, chụp ảnh làm bằng chứng |
-| TN5 - Delta Lake | `06_tn5_delta_lake.py` | in trực tiếp ra màn hình, chụp ảnh làm bằng chứng |
+### 2. Chạy Incremental Load Pipeline
+Bổ sung thêm 20.000 bản ghi mới (pipeline tự đọc Watermark từ `data/watermark.json` để chỉ xử lý các bản ghi mới):
+```powershell
+python main_pipeline.py --mode incremental --n 20000 --error-ratio 0.02
+```
+> **Lưu ý**: Watermark thực tế tăng từ 100 000 → 120 000, 20 000 bản ghi mới được tạo, trong đó 19 601 bản ghi sạch đã được load, khẳng định đây là incremental thực sự.
 
-## Dừng MinIO khi làm xong
-```bash
+### 3. Truy vấn SQL Analytics với DuckDB
+Kiểm tra số lượng bản ghi SẠCH tại Target Delta Table và các lý do dữ liệu bị LỖI tại `error_records`:
+```powershell
+python query_analytics.py
+```
+
+---
+
+## 📊 Thí nghiệm Benchmark & Trực quan hóa
+
+Chạy bộ 4 bài thí nghiệm đánh giá chuyên sâu:
+```powershell
+python benchmark/run_benchmarks.py
+```
+- **TN1**: Benchmark thời gian xử lý Pipeline theo Quy mô dữ liệu (100K → 5M bản ghi).
+- **TN2**: So sánh hiệu năng giữa **Full Load** và **Incremental Load**.
+- **TN3**: So sánh xử lý giữa **Dữ liệu 100% Sạch** và **Dữ liệu 10% Lỗi**.
+- **TN4**: Ảnh hưởng của kích thước **Batch Size** (1K, 10K, 50K).
+
+### 📈 Giới hạn hệ thống
+- Khi chạy benchmark **TN3** với 500 k bản ghi và 10 % dữ liệu lỗi, quá trình sinh dữ liệu gây lỗi **MemoryError** của Pandas (cấp phát bộ nhớ). Điều này cho thấy môi trường hiện tại không đủ RAM để xử lý khối lượng dữ liệu này.
+
+Vẽ biểu đồ đồ họa cho báo cáo/slide:
+```powershell
+python 07_plot_results.py
+```
+*Tất cả biểu đồ `.png` và bảng kết quả `.csv` sẽ xuất tự động trong thư mục `results/`.*
+
+---
+
+## 🛡️ Dừng dịch vụ khi hoàn tất
+```powershell
 docker compose down
 ```

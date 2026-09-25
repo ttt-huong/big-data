@@ -28,18 +28,33 @@ TABLE_URI = f"s3://{config.BUCKET_METADATA}/orders_delta"
 def run(n: int):
     df = gen.generate_metadata(n)
 
-    print(f"\n=== TN5 Bước 1: Ghi {n:,} dòng thành Delta table trên MinIO ===")
-    write_deltalake(
-        TABLE_URI,
-        df,
-        mode="overwrite",
-        storage_options=config.DELTA_STORAGE_OPTIONS,
-        partition_by=["category"],
-    )
-    print(f"Đã ghi Delta table tại {TABLE_URI}")
+    print(f"\n=== TN5 Bước 1: Ghi {n:,} dòng thành Delta table ===")
+    table_uri = TABLE_URI
+    storage_opts = config.DELTA_STORAGE_OPTIONS
+    try:
+        write_deltalake(
+            table_uri,
+            df,
+            mode="overwrite",
+            storage_options=storage_opts,
+            partition_by=["category"],
+        )
+    except Exception as e:
+        print(f"[Warning] Không thể ghi MinIO ({e}). Chuyển sang demo Delta Lake tại Local Path...")
+        table_uri = os.path.join(config.LOCAL_DATA_DIR, "orders_delta_local")
+        storage_opts = None
+        write_deltalake(
+            table_uri,
+            df,
+            mode="overwrite",
+            partition_by=["category"],
+        )
 
-    dt = DeltaTable(TABLE_URI, storage_options=config.DELTA_STORAGE_OPTIONS)
+    print(f"Đã ghi Delta table tại {table_uri}")
+
+    dt = DeltaTable(table_uri, storage_options=storage_opts) if storage_opts else DeltaTable(table_uri)
     print(f"Version hiện tại: {dt.version()}")
+
 
     print("\n=== TN5 Bước 2: ACID transaction - UPDATE dữ liệu ===")
     # Tăng file_size của category 'san_pham' thêm 10% (mô phỏng chỉnh sửa dữ liệu)
@@ -62,7 +77,7 @@ def run(n: int):
         GROUP BY category
     """).show()
 
-    dt_old = DeltaTable(TABLE_URI, storage_options=config.DELTA_STORAGE_OPTIONS, version=0)
+    dt_old = DeltaTable(table_uri, storage_options=storage_opts, version=0) if storage_opts else DeltaTable(table_uri, version=0)
     old = dt_old.to_pyarrow_dataset()
     con.register("orders_v0", old)
     print("--- Dữ liệu Ở VERSION 0 (trước update), category = san_pham ---")
@@ -82,16 +97,27 @@ def run(n: int):
     new_batch = gen.generate_metadata(1000, seed=999).head(100).copy()
     new_batch["is_reviewed"] = True  # cột mới, dữ liệu cũ chưa từng có
 
-    write_deltalake(
-        TABLE_URI,
-        new_batch,
-        mode="append",
-        schema_mode="merge",   # cho phép thêm cột mới mà không lỗi
-        storage_options=config.DELTA_STORAGE_OPTIONS,
-        partition_by=["category"],
-    )
-    dt = DeltaTable(TABLE_URI, storage_options=config.DELTA_STORAGE_OPTIONS)
+    if storage_opts:
+        write_deltalake(
+            table_uri,
+            new_batch,
+            mode="append",
+            schema_mode="merge",   # cho phép thêm cột mới mà không lỗi
+            storage_options=storage_opts,
+            partition_by=["category"],
+        )
+        dt = DeltaTable(table_uri, storage_options=storage_opts)
+    else:
+        write_deltalake(
+            table_uri,
+            new_batch,
+            mode="append",
+            schema_mode="merge",
+            partition_by=["category"],
+        )
+        dt = DeltaTable(table_uri)
     print(f"Đã append kèm cột mới 'is_reviewed'. Version mới: {dt.version()}")
+
 
     con.register("orders_after_schema_change", dt.to_pyarrow_dataset())
     print("--- Schema bảng sau khi thêm cột (các dòng cũ có is_reviewed = NULL) ---")

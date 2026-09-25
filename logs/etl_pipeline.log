@@ -426,3 +426,631 @@ numpy._core._exceptions._ArrayMemoryError: Unable to allocate 3.44 MiB for an ar
 2026-09-14 11:34:43,301 [INFO] [Load] Ghi 47,852 bản ghi vào Target: s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
 2026-09-14 11:34:43,534 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=199860, last_ts=2026-08-30 23:55:38
 2026-09-14 11:34:43,534 [INFO] [Load] Hoàn tất nạp 47,852 bản ghi (0.225s)
+2026-09-24 21:03:33,767 [INFO] [Load] Nạp 1 bản ghi vào Target (MERGE): C:\Users\Admin\AppData\Local\Temp\tmply_f5sq1 (Lần thử 1/3)
+2026-09-24 21:03:33,803 [INFO] [Load] Đã ghi thành công Delta Table (mode=append)
+2026-09-24 21:03:52,115 [INFO] [Load] Nạp 1 bản ghi vào Target (MERGE): C:\Users\Admin\AppData\Local\Temp\tmpzer6mdll (Lần thử 1/3)
+2026-09-24 21:03:52,153 [INFO] [Load] Đã ghi thành công Delta Table (mode=append)
+2026-09-24 21:03:52,156 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1, last_ts=2024-01-01 00:00:00
+2026-09-24 21:03:52,156 [INFO] [Load] Hoàn tất nạp 1 bản ghi (0.039s)
+2026-09-24 21:03:52,196 [INFO] [Load] Nạp 1 bản ghi vào Target (MERGE): C:\Users\Admin\AppData\Local\Temp\tmpzer6mdll (Lần thử 1/3)
+2026-09-24 21:03:52,225 [INFO] [Load] Đã ghi thành công Delta Table (mode=append)
+2026-09-24 21:03:52,226 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1, last_ts=2024-01-01 00:00:00
+2026-09-24 21:03:52,226 [INFO] [Load] Hoàn tất nạp 1 bản ghi (0.029s)
+2026-09-24 21:07:08,307 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-24 21:07:08,307 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000 dòng).
+2026-09-24 21:07:08,307 [INFO] [Extract] Đã trích xuất 1,000 bản ghi (0.000s)
+2026-09-24 21:07:08,845 [WARNING] [Transform] Đã phát hiện và lưu 49 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-24 21:07:08,847 [INFO] [Transform] Xử lý xong: 951 bản ghi SẠCH, 49 bản ghi LỖI (0.540s)
+2026-09-24 21:07:08,848 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-24 21:07:40,586 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 31.704122s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-24 21:08:09,870 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.2631091s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-24 21:08:10,871 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-24 21:08:38,497 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.6150156s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-24 21:09:07,460 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.9463392s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-24 21:09:08,460 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-24 21:09:37,047 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.5763873s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-24 21:10:06,615 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.55888s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-24 21:10:07,617 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.55888s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-24 21:10:07,617 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-24 21:10:07,679 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000, last_ts=2026-08-30 04:24:46
+2026-09-24 21:10:07,679 [INFO] [Load] Hoàn tất nạp 951 bản ghi (178.829s)
+2026-09-25 00:33:26,123 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: BACKFILL) <===
+2026-09-25 00:33:26,125 [INFO] [Extract] Chế độ BACKFILL LOAD. Lọc dữ liệu từ 2026-01-01 đến 2026-01-31.
+2026-09-25 00:33:26,132 [INFO] [Extract] Đã trích xuất 18 bản ghi (0.008s)
+2026-09-25 00:33:26,161 [INFO] [Transform] Ghi 2 bản ghi lỗi vào ./data\error_records\error_20260925003326158876.parquet
+2026-09-25 00:33:26,162 [WARNING] [Transform] Đã phát hiện và lưu 2 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 00:33:26,165 [INFO] [Transform] Xử lý xong: 16 bản ghi SẠCH, 2 bản ghi LỖI (0.033s)
+2026-09-25 00:33:26,165 [INFO] [Load] Nạp 16 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 00:34:02,401 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 36.1965564s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 00:34:38,460 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.0854504s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 00:34:39,461 [INFO] [Load] Nạp 16 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 00:35:08,095 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.6255951s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 00:35:35,556 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.4506955s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 00:35:36,557 [INFO] [Load] Nạp 16 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 00:36:04,372 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.8093695s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 00:36:31,927 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.5450056s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 00:36:32,929 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.5450056s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 00:36:32,929 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 00:36:32,987 [INFO] [Load Backfill] Giữ nguyên mốc Watermark hiện tại (không ghi đè watermark bằng dữ liệu backfill).
+2026-09-25 00:36:32,987 [INFO] [Load] Hoàn tất nạp 16 bản ghi (186.821s)
+2026-09-25 08:52:47,470 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-25 08:52:47,470 [INFO] Áp dụng Chunk Processing với batch_size=10,000
+2026-09-25 08:52:47,472 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (50,000 dòng).
+2026-09-25 08:52:47,473 [INFO] [Extract] Đã trích xuất 50,000 bản ghi (0.002s)
+2026-09-25 08:52:47,521 [INFO] [Transform] Ghi 443 bản ghi lỗi vào ./data\error_records\error_20260925085247517053.parquet
+2026-09-25 08:52:47,521 [WARNING] [Transform] Đã phát hiện và lưu 443 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 08:52:47,534 [INFO] [Transform] Phát hiện 2,640 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2024-01-01 12:00:00).
+2026-09-25 08:52:47,534 [INFO] [Transform] Xử lý xong: 9,557 bản ghi SẠCH, 443 bản ghi LỖI (0.061s)
+2026-09-25 08:52:47,534 [INFO] [Load] Nạp 9,557 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 08:53:15,812 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.2428572s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:53:53,158 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.3145564s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:53:54,160 [INFO] [Load] Nạp 9,557 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 08:54:22,350 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.1822308s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:54:51,500 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.1412503s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:54:52,501 [INFO] [Load] Nạp 9,557 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 08:55:21,189 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.6788981s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:55:48,806 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.6103395s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:55:49,807 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.6103395s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:55:49,808 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 08:55:49,882 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=49269, last_ts=2026-08-30 22:26:59
+2026-09-25 08:55:49,882 [INFO] [Load] Hoàn tất nạp 9,557 bản ghi (182.346s)
+2026-09-25 08:55:49,968 [INFO] [Transform] Ghi 415 bản ghi lỗi vào ./data\error_records\error_20260925085549962933.parquet
+2026-09-25 08:55:49,968 [WARNING] [Transform] Đã phát hiện và lưu 415 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 08:55:49,998 [INFO] [Transform] Phát hiện 9,585 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2026-08-30 22:26:59).
+2026-09-25 08:55:49,999 [INFO] [Transform] Xử lý xong: 9,585 bản ghi SẠCH, 415 bản ghi LỖI (0.115s)
+2026-09-25 08:55:49,999 [INFO] [Load] Nạp 9,585 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 08:56:07,373 [INFO] ===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: FULL) <===
+2026-09-25 08:56:07,373 [INFO] [Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset (1,000 dòng).
+2026-09-25 08:56:07,374 [INFO] [Extract] Đã trích xuất 1,000 bản ghi (0.000s)
+2026-09-25 08:56:07,395 [INFO] [Transform] Ghi 49 bản ghi lỗi vào ./data\error_records\error_20260925085607393232.parquet
+2026-09-25 08:56:07,395 [WARNING] [Transform] Đã phát hiện và lưu 49 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 08:56:07,400 [INFO] [Transform] Phát hiện 260 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2024-01-01 12:00:00).
+2026-09-25 08:56:07,400 [INFO] [Transform] Xử lý xong: 951 bản ghi SẠCH, 49 bản ghi LỖI (0.026s)
+2026-09-25 08:56:07,400 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 08:56:21,995 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 31.9842539s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:56:37,656 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 30.2493318s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:56:51,420 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.4167296s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:56:52,421 [INFO] [Load] Nạp 9,585 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 08:57:06,668 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.0001615s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:57:07,669 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 08:57:21,754 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 29.3189727s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:57:35,227 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.5491111s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:57:51,413 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.6535401s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:57:52,414 [INFO] [Load] Nạp 9,585 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 08:58:03,269 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.0267415s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:58:04,271 [INFO] [Load] Nạp 951 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 08:58:19,750 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.3148519s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:58:38,997 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 34.7102739s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:58:47,588 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.8201737s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:58:48,589 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.8201737s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:58:48,589 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 08:58:48,629 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=49234, last_ts=2026-08-30 21:04:05
+2026-09-25 08:58:48,630 [INFO] [Load] Hoàn tất nạp 9,585 bản ghi (178.627s)
+2026-09-25 08:58:48,728 [INFO] [Transform] Ghi 446 bản ghi lỗi vào ./data\error_records\error_20260925085848722839.parquet
+2026-09-25 08:58:48,728 [WARNING] [Transform] Đã phát hiện và lưu 446 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 08:58:48,764 [INFO] [Transform] Phát hiện 9,554 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2026-08-30 21:04:05).
+2026-09-25 08:58:48,764 [INFO] [Transform] Xử lý xong: 9,554 bản ghi SẠCH, 446 bản ghi LỖI (0.131s)
+2026-09-25 08:58:48,765 [INFO] [Load] Nạp 9,554 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 08:59:07,224 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.2091091s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:59:08,226 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.2091091s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:59:08,226 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 08:59:08,300 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=1000, last_ts=2026-08-30 04:24:46
+2026-09-25 08:59:08,300 [INFO] [Load] Hoàn tất nạp 951 bản ghi (180.898s)
+2026-09-25 08:59:16,230 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.4512691s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 08:59:45,390 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.143154s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 08:59:46,391 [INFO] [Load] Nạp 9,554 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 09:00:17,678 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 31.2771086s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:00:46,533 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.8452008s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:00:47,534 [INFO] [Load] Nạp 9,554 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 09:01:15,184 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.635317s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:01:43,298 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.1043844s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:01:44,300 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.1043844s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:01:44,300 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 09:01:44,336 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=49350, last_ts=2026-08-30 18:52:12
+2026-09-25 09:01:44,336 [INFO] [Load] Hoàn tất nạp 9,554 bản ghi (175.570s)
+2026-09-25 09:01:44,410 [INFO] [Transform] Ghi 424 bản ghi lỗi vào ./data\error_records\error_20260925090144404435.parquet
+2026-09-25 09:01:44,410 [WARNING] [Transform] Đã phát hiện và lưu 424 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 09:01:44,444 [INFO] [Transform] Phát hiện 9,574 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2026-08-30 18:52:12).
+2026-09-25 09:01:44,444 [INFO] [Transform] Xử lý xong: 9,576 bản ghi SẠCH, 424 bản ghi LỖI (0.108s)
+2026-09-25 09:01:44,444 [INFO] [Load] Nạp 9,576 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 09:02:12,458 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.0066957s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:02:41,986 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.5164195s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:02:42,987 [INFO] [Load] Nạp 9,576 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 09:03:10,641 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 27.6445436s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:03:43,931 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 33.2801764s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:03:44,932 [INFO] [Load] Nạp 9,576 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 09:04:13,713 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.7657508s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:04:42,623 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.8984398s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:04:43,624 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 28.8984398s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:04:43,625 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 09:04:43,647 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=49365, last_ts=2026-08-30 19:43:50
+2026-09-25 09:04:43,647 [INFO] [Load] Hoàn tất nạp 9,576 bản ghi (179.201s)
+2026-09-25 09:04:43,690 [INFO] [Transform] Ghi 442 bản ghi lỗi vào ./data\error_records\error_20260925090443688259.parquet
+2026-09-25 09:04:43,691 [WARNING] [Transform] Đã phát hiện và lưu 442 bản ghi LỖI vào ./data\error_records.parquet
+2026-09-25 09:04:43,715 [INFO] [Transform] Phát hiện 9,558 bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < 2026-08-30 19:43:50).
+2026-09-25 09:04:43,715 [INFO] [Transform] Xử lý xong: 9,558 bản ghi SẠCH, 442 bản ghi LỖI (0.068s)
+2026-09-25 09:04:43,716 [INFO] [Load] Nạp 9,558 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 1/3)
+2026-09-25 09:05:15,404 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 31.677016s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:05:43,165 [WARNING] [Load] Thất bại lần 1: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.7463675s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:05:44,165 [INFO] [Load] Nạp 9,558 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 2/3)
+2026-09-25 09:06:13,124 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 28.9504124s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:06:42,602 [WARNING] [Load] Thất bại lần 2: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 29.4683103s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:06:43,604 [INFO] [Load] Nạp 9,558 bản ghi vào Target (MERGE): s3://lakehouse-metadata/clean_metadata_delta (Lần thử 3/3)
+2026-09-25 09:07:14,113 [WARNING] [Load Check Warning] Lỗi kiểm tra Delta Table: Generic S3 error
+          [31m↳[0m Error performing list request
+           [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata?list-type=2&prefix=clean_metadata_delta%2F_delta_log%2F in 30.4987666s, after 10 retries, max_retries
+            [31m↳[0m 10, retry_timeout
+             [31m↳[0m 180s  - HTTP error
+              [31m↳[0m error sending request
+               [31m↳[0m client error (Connect)
+                [31m↳[0m tcp connect error
+                 [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:07:42,048 [WARNING] [Load] Thất bại lần 3: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.9256786s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+. Đang thử lại...
+2026-09-25 09:07:43,049 [ERROR] [Load] Ghi Delta Table thất bại sau 3 lần thử: Kernel error -> Generic S3 error
+          [31m↳[0m Error performing GET http://localhost:9000/lakehouse-metadata/clean_metadata_delta/_delta_log/_last_checkpoint in 27.9256786s, after 10 retries, max_retries
+           [31m↳[0m 10, retry_timeout
+            [31m↳[0m 180s  - HTTP error
+             [31m↳[0m error sending request
+              [31m↳[0m client error (Connect)
+               [31m↳[0m tcp connect error
+                [31m↳[0m No connection could be made because the target machine actively refused it. (os error 10061)
+
+2026-09-25 09:07:43,050 [INFO] [Load Fallback] Đang ghi dữ liệu sạch vào local Parquet fallback: ./data\clean_dataset_fallback
+2026-09-25 09:07:43,071 [INFO] [Extract] Đã cập nhật Watermark mới: last_image_id=50000, last_ts=2026-08-30 18:12:38
+2026-09-25 09:07:43,071 [INFO] [Load] Hoàn tất nạp 9,558 bản ghi (179.353s)

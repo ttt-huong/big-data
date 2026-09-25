@@ -16,7 +16,8 @@ def validate_and_clean(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     2. Kiểm tra giá trị hợp lệ: file_size > 0, width > 0, height > 0
     3. Kiểm tra danh mục hợp lệ (category in config.CATEGORIES)
     4. Kiểm tra định dạng hợp lệ (format in config.FORMATS)
-    5. Kiểm tra và loại bỏ bản ghi trùng lặp (duplicate image_id)
+    5. Kiểm tra thời gian tạo: created_at không null và không nằm trong tương lai
+    6. Kiểm tra và loại bỏ bản ghi trùng lặp (duplicate image_id)
 
     Trả về:
     - clean_df: Dữ liệu sạch đã chuẩn hóa
@@ -32,9 +33,16 @@ def validate_and_clean(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     null_id_mask = df["image_id"].isna()
     error_reasons[null_id_mask] += "NULL_IMAGE_ID; "
 
-    # 2. Kiểm tra file_size <= 0
+    # 2. Kiểm tra file_size <= 0, width <= 0, height <= 0
     invalid_size_mask = df["file_size"].fillna(0) <= 0
     error_reasons[invalid_size_mask] += "INVALID_FILE_SIZE; "
+
+    if "width" in df.columns:
+        invalid_width_mask = df["width"].fillna(0) <= 0
+        error_reasons[invalid_width_mask] += "INVALID_WIDTH; "
+    if "height" in df.columns:
+        invalid_height_mask = df["height"].fillna(0) <= 0
+        error_reasons[invalid_height_mask] += "INVALID_HEIGHT; "
 
     # 3. Kiểm tra category không hợp lệ
     invalid_cat_mask = ~df["category"].isin(config.CATEGORIES)
@@ -44,7 +52,20 @@ def validate_and_clean(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     invalid_fmt_mask = ~df["format"].isin(config.FORMATS)
     error_reasons[invalid_fmt_mask] += "INVALID_FORMAT; "
 
-    # 5. Kiểm tra bản ghi trùng lặp image_id (chỉ giữ bản ghi đầu tiên, các bản ghi sau báo lỗi DUPLICATE)
+    # 5. Kiểm tra created_at null, không hợp lệ hoặc tương lai
+    if "created_at" in df.columns:
+        null_ts_mask = df["created_at"].isna()
+        error_reasons[null_ts_mask] += "NULL_CREATED_AT; "
+        
+        parsed_ts = pd.to_datetime(df["created_at"], errors="coerce")
+        invalid_ts_mask = parsed_ts.isna() & (~null_ts_mask)
+        error_reasons[invalid_ts_mask] += "INVALID_CREATED_AT; "
+
+        now = pd.Timestamp.now()
+        future_mask = (parsed_ts > now) & (~parsed_ts.isna())
+        error_reasons[future_mask] += "FUTURE_CREATED_AT; "
+
+    # 6. Kiểm tra bản ghi trùng lặp image_id (chỉ giữ bản ghi đầu tiên)
     valid_id_df = df[~null_id_mask]
     duplicate_mask = valid_id_df.duplicated(subset=["image_id"], keep="first")
     duplicate_indices = valid_id_df[duplicate_mask].index

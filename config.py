@@ -3,9 +3,10 @@ Cấu hình dùng chung cho toàn bộ project P4: Lakehouse trên Object Storag
 """
 
 # --- Kết nối MinIO (object storage) ---
-MINIO_ENDPOINT = "http://localhost:9000"
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
+import os
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 
 BUCKET_IMAGES = "lakehouse-images"      # chứa ảnh (thật/tối giản)
 BUCKET_METADATA = "lakehouse-metadata"  # chứa Parquet / Delta table metadata

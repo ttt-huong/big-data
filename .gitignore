@@ -15,3 +15,10 @@ venv/
 # IDE settings
 .vscode/
 .idea/
+
+# Scratch directory
+scratch/
+
+# Logs
+logs/*
+!logs/.gitkeep

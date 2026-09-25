@@ -26,7 +26,7 @@ logger = logging.getLogger("ETL_Pipeline")
 
 @dataclass
 class PipelineMetrics:
-    mode: str = "full"                      # 'full' hoặc 'incremental'
+    mode: str = "full"                      # 'full', 'incremental', hoặc 'backfill'
     start_time: float = field(default_factory=time.time)
     end_time: Optional[float] = None
     total_time_s: float = 0.0
@@ -34,6 +34,7 @@ class PipelineMetrics:
     extracted_records: int = 0
     valid_records: int = 0
     error_records: int = 0
+    late_records: int = 0
     loaded_records: int = 0
     
     extract_time_s: float = 0.0
@@ -64,6 +65,8 @@ class PipelineMetrics:
         print(f"Records Extracted: {self.extracted_records:,}")
         print(f"Records Valid    : {self.valid_records:,}")
         print(f"Records Error    : {self.error_records:,}")
+        if self.late_records > 0:
+            print(f"Records Late     : {self.late_records:,}")
         print(f"Records Loaded   : {self.loaded_records:,}")
         print(f"Retries          : {self.retries}")
         if self.error_message:
@@ -72,3 +75,32 @@ class PipelineMetrics:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+import functools
+
+def retry_operation(max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0, exceptions=(Exception,)):
+    """
+    Decorator tự động thử lại (Retry) khi hàm nảy sinh ngoại lệ.
+    Phục vụ tiêu chí Retry Mechanism trong pipeline.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    metrics = kwargs.get("metrics")
+                    if metrics and hasattr(metrics, "retries"):
+                        metrics.retries += 1
+                    if attempt == max_retries:
+                        logger.error(f"[Retry] Lần thử {attempt}/{max_retries} cho {func.__name__} THẤT BẠI: {e}")
+                        raise
+                    logger.warning(f"[Retry] Lần thử {attempt}/{max_retries} cho {func.__name__} lỗi: {e}. Đang thử lại sau {current_delay}s...")
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+        return wrapper
+    return decorator
+

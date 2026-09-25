@@ -7,7 +7,7 @@ Hỗ trợ Retry khi gặp lỗi nạp dữ liệu tạm thời và tự động
 import os
 import time
 import pandas as pd
-from deltalake import write_deltalake
+from deltalake import DeltaTable, write_deltalake
 
 import config
 from pipeline.extract import save_watermark
@@ -18,12 +18,13 @@ def load_data(
     clean_df: pd.DataFrame,
     metrics: PipelineMetrics,
     target_uri: str = config.TARGET_DELTA_URI,
+    write_mode: str = "merge",
     max_retries: int = 3
 ) -> bool:
     """
     Nạp dữ liệu sạch vào Delta Lake / Parquet Target Storage:
-    - mode: 'append' nếu có dữ liệu mới
-    - Có cơ chế retry nếu gặp lỗi tạm thời
+    - write_mode: 'merge' (Idempotent Upsert theo image_id), 'append', hoặc 'overwrite'
+    - Có cơ chế retry khi gặp lỗi tạm thời
     - Cập nhật Watermark sau khi ghi thành công
     """
     t0 = time.time()
@@ -38,17 +39,59 @@ def load_data(
 
     for attempt in range(1, max_retries + 1):
         try:
-            logger.info(f"[Load] Ghi {len(clean_df):,} bản ghi vào Target: {target_uri} (Lần thử {attempt}/{max_retries})")
+            logger.info(f"[Load] Nạp {len(clean_df):,} bản ghi vào Target ({write_mode.upper()}): {target_uri} (Lần thử {attempt}/{max_retries})")
             
-            # Ghi vào Delta Table trên MinIO (S3)
-            write_deltalake(
-                target_uri,
-                clean_df,
-                mode="append",
-                schema_mode="merge",
-                storage_options=config.DELTA_STORAGE_OPTIONS,
-                partition_by=["category"],
-            )
+            # Xác định storage_options dựa trên URI (chỉ dùng S3 options khi URI bắt đầu bằng s3://)
+            storage_opts = config.DELTA_STORAGE_OPTIONS if target_uri.startswith("s3://") else None
+
+            is_delta_table = False
+            try:
+                if storage_opts:
+                    is_delta_table = DeltaTable.is_deltatable(target_uri, storage_options=storage_opts)
+                else:
+                    is_delta_table = DeltaTable.is_deltatable(target_uri)
+            except Exception as check_err:
+                logger.warning(f"[Load Check Warning] Lỗi kiểm tra Delta Table: {check_err}")
+                is_delta_table = False
+
+            if write_mode == "merge" and is_delta_table:
+                if storage_opts:
+                    dt = DeltaTable(target_uri, storage_options=storage_opts)
+                else:
+                    dt = DeltaTable(target_uri)
+                (
+                    dt.merge(
+                        source=clean_df,
+                        predicate="target.image_id = source.image_id",
+                        source_alias="source",
+                        target_alias="target",
+                    )
+                    .when_matched_update_all()
+                    .when_not_matched_insert_all()
+                    .execute()
+                )
+                logger.info(f"[Load] Đã thực hiện MERGE INTO (Upsert) thành công trên Delta Table v{dt.version()}")
+            else:
+                mode_to_use = "append" if write_mode == "merge" else write_mode
+                if storage_opts:
+                    write_deltalake(
+                        target_uri,
+                        clean_df,
+                        mode=mode_to_use,
+                        schema_mode="merge",
+                        storage_options=storage_opts,
+                        partition_by=["category"],
+                    )
+                else:
+                    write_deltalake(
+                        target_uri,
+                        clean_df,
+                        mode=mode_to_use,
+                        schema_mode="merge",
+                        partition_by=["category"],
+                    )
+                logger.info(f"[Load] Đã ghi thành công Delta Table (mode={mode_to_use})")
+
             success = True
             break
         except Exception as e:
@@ -74,11 +117,14 @@ def load_data(
     metrics.loaded_records += len(clean_df)
     metrics.load_time_s = round(load_time, 3)
 
-    # Cập nhật Watermark sau khi ghi thành công
-    if "image_id" in clean_df.columns:
+    # Cập nhật Watermark sau khi ghi thành công (Bỏ qua nếu là chế độ Backfill)
+    if metrics.mode != "backfill" and "image_id" in clean_df.columns:
         max_id = clean_df["image_id"].max()
         max_ts = clean_df["created_at"].max() if "created_at" in clean_df.columns else None
         save_watermark(last_watermark_ts=max_ts, last_image_id=max_id)
+    elif metrics.mode == "backfill":
+        logger.info("[Load Backfill] Giữ nguyên mốc Watermark hiện tại (không ghi đè watermark bằng dữ liệu backfill).")
+
 
     logger.info(f"[Load] Hoàn tất nạp {len(clean_df):,} bản ghi ({load_time:.3f}s)")
     return True

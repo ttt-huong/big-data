@@ -121,9 +121,122 @@ def plot_etl_tn4_batch_size():
     print(f"Đã lưu biểu đồ TN4 vào {out_path}")
 
 
+def plot_storage_tn1_csv_vs_parquet():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "tn1_csv_vs_parquet.csv")
+    if not os.path.exists(csv_file):
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua Storage TN1.")
+        return
+
+    df = pd.read_csv(csv_file)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    metrics = ["Dung lượng (MB)", "Đọc lọc (s)"]
+    csv_vals = [df["csv_size_mb"].iloc[0], df["filter_csv_s"].iloc[0]]
+    pq_vals = [df["parquet_size_mb"].iloc[0], df["filter_parquet_s"].iloc[0]]
+
+    x = [0, 1]
+    width = 0.35
+    ax1.bar([i - width/2 for i in x], csv_vals, width, label="CSV", color="#e74c3c")
+    ax1.bar([i + width/2 for i in x], pq_vals, width, label="Parquet", color="#2ecc71")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(metrics)
+    ax1.set_title("So sánh Dung lượng & Thời gian truy vấn CSV vs Parquet")
+    ax1.legend()
+    ax1.grid(axis="y", alpha=0.3)
+
+    # Đọc & Ghi
+    io_metrics = ["Ghi (s)", "Đọc toàn bộ (s)"]
+    csv_io = [df["write_csv_s"].iloc[0], df["read_csv_s"].iloc[0]]
+    pq_io = [df["write_parquet_s"].iloc[0], df["read_parquet_s"].iloc[0]]
+
+    ax2.bar([i - width/2 for i in x], csv_io, width, label="CSV", color="#e74c3c")
+    ax2.bar([i + width/2 for i in x], pq_io, width, label="Parquet", color="#2ecc71")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(io_metrics)
+    ax2.set_title("So sánh Hiệu năng I/O (Đọc/Ghi)")
+    ax2.legend()
+    ax2.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_storage_tn1_csv_vs_parquet.png")
+    plt.savefig(out_path, dpi=150)
+    print(f"Đã lưu biểu đồ Storage TN1 vào {out_path}")
+
+
+def plot_storage_tn2_partitioning():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "tn2_partitioning.csv")
+    if not os.path.exists(csv_file):
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua Storage TN2.")
+        return
+
+    df = pd.read_csv(csv_file)
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    categories = ["DuckDB Query (No Partition)", "DuckDB Query (Partitioned)"]
+    times = [df["no_partition_query_s"].iloc[0], df["partition_query_s"].iloc[0]]
+
+    bars = ax.bar(categories, times, color=["#e74c3c", "#2ecc71"], width=0.4)
+    ax.set_ylabel("Thời gian truy vấn (Giây)")
+    ax.set_title(f"Storage TN2: Tăng tốc độ truy vấn nhờ Partitioning (Speedup: {df['speedup_x'].iloc[0]}x)")
+
+    for bar in bars:
+        h = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., h, f"{h:.4f}s", ha="center", va="bottom")
+
+    plt.tight_layout()
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_storage_tn2_partitioning.png")
+    plt.savefig(out_path, dpi=150)
+    print(f"Đã lưu biểu đồ Storage TN2 vào {out_path}")
+
+
+def plot_storage_tn3_scale_benchmark():
+    csv_file = os.path.join(config.LOCAL_RESULTS_DIR, "tn3_scale_benchmark.csv")
+    if not os.path.exists(csv_file):
+        print(f"[CẢNH BÁO] Không tìm thấy {csv_file}. Bỏ qua Storage TN3.")
+        return
+
+    df = pd.read_csv(csv_file)
+    if "error" in df.columns:
+        df = df[df["error"].isna()].copy()
+
+    if df.empty:
+        return
+
+    x_labels = [format_n(v) for v in df["n_rows"]]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax1.plot(x_labels, df["csv_size_mb"], marker="o", label="CSV Size (MB)", color="#e74c3c", linewidth=2)
+    ax1.plot(x_labels, df["parquet_size_mb"], marker="s", label="Parquet Size (MB)", color="#2ecc71", linewidth=2)
+    ax1.set_xlabel("Số lượng bản ghi (Rows)")
+    ax1.set_ylabel("Dung lượng (MB)")
+    ax1.set_title("Storage TN3: Dung lượng lưu trữ theo Quy mô Dữ liệu")
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    ax2.plot(x_labels, df["filter_csv_s"], marker="o", label="CSV Filter Query (s)", color="#e74c3c", linewidth=2)
+    ax2.plot(x_labels, df["filter_parquet_s"], marker="s", label="Parquet Filter Query (s)", color="#2ecc71", linewidth=2)
+    ax2.set_xlabel("Số lượng bản ghi (Rows)")
+    ax2.set_ylabel("Thời gian lọc dữ liệu (Giây)")
+    ax2.set_title("Storage TN3: Hiệu năng Truy vấn Lọc theo Quy mô")
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+
+    plt.tight_layout()
+    out_path = os.path.join(config.LOCAL_RESULTS_DIR, "chart_storage_tn3_scale.png")
+    plt.savefig(out_path, dpi=150)
+    print(f"Đã lưu biểu đồ Storage TN3 vào {out_path}")
+
+
 if __name__ == "__main__":
+    print("=== XUẤT BIỂU ĐỒ BỘ ETL PIPELINE BENCHMARKS ===")
     plot_etl_tn1_scale()
     plot_etl_tn2_full_vs_inc()
     plot_etl_tn3_clean_vs_dirty()
     plot_etl_tn4_batch_size()
-    print("\n[THÀNH CÔNG] Tất cả các biểu đồ PNG mới đã xuất vào thư mục results/!")
+
+    print("\n=== XUẤT BIỂU ĐỒ BỘ STORAGE FORMAT BENCHMARKS ===")
+    plot_storage_tn1_csv_vs_parquet()
+    plot_storage_tn2_partitioning()
+    plot_storage_tn3_scale_benchmark()
+    print("\n[THÀNH CÔNG] Tất cả các biểu đồ PNG đã xuất vào thư mục results/!")
+

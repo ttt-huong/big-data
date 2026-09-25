@@ -58,22 +58,40 @@ def query_target_store():
         LIMIT 6
     """).show()
 
-    # 2. Truy vấn Bảng Dữ Liệu Lỗi (Error Records)
-    if os.path.exists(config.ERROR_RECORDS_PATH):
-        error_sql = config.ERROR_RECORDS_PATH.replace("\\", "/")
+    # 2. Tạo Semantic Views cho truy vấn nhanh
+    con.execute("CREATE OR REPLACE VIEW v_clean_summary AS SELECT category, format, COUNT(*) AS num_images, ROUND(AVG(size_mb), 2) AS avg_size_mb, ROUND(AVG(aspect_ratio), 2) AS avg_aspect_ratio FROM target_data GROUP BY category, format")
+
+    print("\n--- 4. Phân tích tỉ lệ khung hình (Aspect Ratio) & Format qua Semantic View ---")
+    con.sql("SELECT category, format, num_images, avg_size_mb, avg_aspect_ratio FROM v_clean_summary ORDER BY num_images DESC LIMIT 10").show()
+
+    print("\n--- 5. Thống kê Dữ liệu Muộn (Late-Arriving Data Tagging) ---")
+    try:
+        con.sql("""
+            SELECT is_late_arriving, COUNT(*) AS num_records
+            FROM target_data
+            GROUP BY is_late_arriving
+        """).show()
+    except Exception as e:
+        print(f"Chưa có cột is_late_arriving trong dataset cũ: {e}")
+
+    # 3. Truy vấn Bảng Dữ Liệu Lỗi (Error Records Store)
+    error_dir = os.path.splitext(config.ERROR_RECORDS_PATH)[0]
+    if os.path.exists(error_dir) or os.path.exists(config.ERROR_RECORDS_PATH):
         print("\n-------------------------------------------------------")
         print("   THỐNG KÊ DỮ LIỆU LỖI (ERROR RECORDS STORE)")
         print("-------------------------------------------------------")
         
-        print("\n--- Top các lý do dữ liệu bị từ chối/bị lỗi ---")
+        path_to_read = f"{error_dir.replace('\\', '/')}/*.parquet" if os.path.exists(error_dir) and os.listdir(error_dir) else config.ERROR_RECORDS_PATH.replace("\\", "/")
+        print(f"\n--- Top các lý do dữ liệu bị từ chối/bị lỗi (Nguồn: {path_to_read}) ---")
         con.sql(f"""
             SELECT error_reason, COUNT(*) AS count
-            FROM read_parquet('{error_sql}')
+            FROM read_parquet('{path_to_read}')
             GROUP BY error_reason
             ORDER BY count DESC
         """).show()
     else:
-        print("\nChưa có bản ghi lỗi nào trong error_records.parquet.")
+        print("\nChưa có bản ghi lỗi nào trong error_records.")
+
 
 
 if __name__ == "__main__":

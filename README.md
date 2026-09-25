@@ -1,23 +1,33 @@
-# ĐỒ ÁN: XÂY DỰNG PIPELINE ETL/ELT XỬ LÝ VÀ TÍCH HỢP DỮ LIỆU QUY MÔ LỚN
+# ĐỒ ÁN: XÂY DỰNG PIPELINE ETL/ELT: EXTRACT–TRANSFORM–LOAD, INCREMENTAL LOADING, RETRY, BACKFILL, XỬ LÝ DỮ LIỆU MUỘN VÀ KIỂM SOÁT LỖI
 
-> Stack công nghệ: **Python + MinIO (S3 Object Storage) + Parquet + Delta Lake + DuckDB** (Không dùng Spark cluster, không dùng Airflow/Kafka cồng kềnh, chạy mượt trên laptop).
-> *Lưu ý*: `boto3`, `Pillow` và `Faker` được khai báo trong `requirements.txt` nhưng **không được sử dụng** trong mã nguồn.
+> Stack công nghệ: **Python + MinIO (S3 Object Storage) + PyArrow + Delta Lake + DuckDB + Pytest**
+> Thiết kế mô-đun hóa, không dùng Airflow/Kafka cồng kềnh, chạy mượt trên mọi môi trường.
 
 ---
 
-## 🎯 Kiến trúc Pipeline ETL
+## 🎯 6 Trụ Cột Cốt Lõi Của Đề Tài
+
+1. **Extract–Transform–Load (ETL/ELT):** Kiến trúc phân tầng rõ ràng (Extract -> Transform/Validation -> Load) hỗ trợ cả Batch Loading và Chunk Streaming Processing để tối ưu hóa RAM.
+2. **Incremental Loading & Idempotency:** Lọc dữ liệu tăng dần bằng `Watermarking` (ID + Timestamp) kết hợp `Delta Lake MERGE INTO (Upsert)` và `Deduplication` chống trùng lặp dữ liệu khi nạp lại.
+3. **Retry Mechanism:** Tự động khôi phục (`@retry_operation` với Exponential Backoff) khi đọc/ghi file hoặc kết nối Storage (MinIO S3) gặp sự cố tạm thời.
+4. **Backfill Mechanism:** Nạp lại dữ liệu quá khứ theo dải ngày (`--mode backfill --start-date --end-date`) mà không làm ảnh hưởng hay xáo trộn mốc Watermark hiện tại.
+5. **Xử lý Dữ liệu Muộn (Late-Arriving Data):** Tự động phát hiện các bản ghi muộn (`created_at < watermark`), phân loại và thống kê báo cáo (`Records Late`).
+6. **Kiểm soát Lỗi & Dead Letter Queue (DLQ):** Phân tách bản ghi sạch và bản ghi lỗi ra thư mục `data/error_records/` dưới dạng các Parquet batch độc lập, loại bỏ hoàn toàn rủi ro tràn RAM (OOM).
+
+---
+
+## 🏗️ Kiến trúc Pipeline ETL
 
 ```mermaid
 flowchart TD
-    Gen["Data Generator<br/>(Clean & Dirty Data)"] --> Raw["Source Data<br/>(CSV / Parquet / Raw Data)"]
-    Raw --> Ext["EXTRACT Layer<br/>(Full Load / Incremental via Watermark)"]
-    Ext --> Trans["TRANSFORM & VALIDATE Layer<br/>(Clean, Ép kiểu, Deduplicate, Bắt lỗi)"]
-    
-    Trans -->|Valid Clean Data| Load["LOAD Layer<br/>(Delta Lake / MinIO S3 Target)"]
-    Trans -->|Invalid Error Data| ErrStore["ERROR RECORDS STORE<br/>(data/error_records.parquet)"]
-    
+    Gen["Data Generator(Clean and Dirty Data)"] --> Raw["Source Data(CSV / Parquet / Raw Data)"]
+    Raw --> Ext["EXTRACT Layer(Full / Incremental / Backfill via Watermark and Retry)"]
+    Ext --> Trans["TRANSFORM and VALIDATE Layer(Quality Rules, Late Data Detection)"]
+
+    Trans -->|Valid Clean Data| Load["LOAD Layer(Delta Lake / MinIO S3 Target via Merge and Fallback)"]
+    Trans -->|Invalid Error Data| ErrStore["ERROR RECORDS DLQ(data/error_records/error_*.parquet)"]
+
     Load --> Duck["DuckDB SQL Analytics Engine"]
-    Load & ErrStore --> Bench["Benchmark Suite & Visualizer<br/>(4 Thí nghiệm + Biểu đồ PNG)"]
 ```
 
 ---
@@ -26,38 +36,39 @@ flowchart TD
 
 ```
 big-data/
-├── config.py                 # Cấu hình MinIO, đường dẫn local & các hằng số
-├── docker-compose.yml        # Khởi chạy MinIO S3 Object Storage
-├── main_pipeline.py          # Entrypoint chạy Pipeline ETL (Full / Incremental)
-├── query_analytics.py        # Truy vấn DuckDB SQL trên Target Store & Error Records
-├── 00_setup_minio.py         # Khởi tạo MinIO Buckets & Ảnh mẫu demo
+├── config.py                 # Cấu hình MinIO, đường dẫn local và các hằng số
+├── docker-compose.yml        # Khởi chạy MinIO S3 Object Storage và Services
+├── Dockerfile                # Containerize Pipeline Runner
+├── main_pipeline.py          # Entrypoint chạy Pipeline ETL (Full / Incremental / Backfill)
+├── query_analytics.py        # Truy vấn DuckDB SQL trên Target Store và Error Records
+├── 00_setup_minio.py         # Khởi tạo MinIO Buckets và Ảnh mẫu demo
 ├── 07_plot_results.py        # Tự động xuất biểu đồ PNG kết quả benchmark
 ├── requirements.txt          # Danh sách thư viện Python
 │
 ├── generator/                # Module sinh dữ liệu giả lập quy mô lớn
-│   ├── __init__.py
-│   └── data_generator.py     # Sinh dữ liệu sạch & dữ liệu bẩn (Dirty Data)
+│   └── data_generator.py     # Sinh dữ liệu sạch và dữ liệu bẩn (Dirty Data)
 │
 ├── pipeline/                 # Các tầng chính của Pipeline ETL
-│   ├── __init__.py
-│   ├── extract.py            # Layer Extract (Full Load & Incremental Load Watermark)
-│   ├── transform.py          # Layer Transform & Enrich dữ liệu
-│   ├── validation.py         # Quy tắc kiểm soát chất lượng dữ liệu (Quality Rules)
-│   ├── load.py               # Layer Load ghi vào Delta Lake trên MinIO (có Retry)
-│   └── logging_utils.py      # Tracker thống kê thời gian & ghi Log hệ thống
+│   ├── extract.py            # Extract Layer (Full, Incremental và Backfill)
+│   ├── transform.py          # Transform Layer (Late Data Detection và DLQ Error Writer)
+│   ├── validation.py         # Data Quality Rules (Null, Domain, Datatype, Future date)
+│   ├── load.py               # Load Layer (Delta Lake Upsert, Retry và Local Fallback)
+│   └── logging_utils.py      # Metrics Summary Tracker và Decorator @retry_operation
 │
-├── benchmark/                # Suite đánh giá hiệu năng
-│   ├── __init__.py
-│   └── run_benchmarks.py     # Thực thi 4 bài thí nghiệm ETL tự động
+├── tests/                    # Unit Tests (Pytest)
+│   ├── test_extract.py       # Test Extract, Watermark và Backfill logic
+│   ├── test_transform.py     # Test Transform và Late Data Detection
+│   ├── test_validation.py    # Test Quality Rules
+│   └── test_load.py          # Test Load và Idempotency
 │
-├── data/                     # Thư mục chứa dữ liệu thô, watermark & error records
+├── data/                     # Thư mục chứa dữ liệu thô, watermark và error records
 ├── logs/                     # File log quá trình chạy etl_pipeline.log
 └── results/                  # File số liệu .csv và biểu đồ đồ họa .png
 ```
 
 ---
 
-## ⚙️ Hướng dẫn cài đặt & Khởi chạy
+## ⚙️ Hướng dẫn cài đặt và Khởi chạy
 
 ### 1. Khởi động MinIO (S3 Object Storage)
 ```powershell
@@ -77,6 +88,11 @@ pip install -r requirements.txt
 python 00_setup_minio.py
 ```
 
+### 4. Chạy Automated Unit Tests (Pytest — 11/11 PASS)
+```powershell
+pytest tests/ -v
+```
+
 ---
 
 ## 🚀 Các lệnh thực thi Pipeline ETL
@@ -87,40 +103,63 @@ Chạy Full Load với 100.000 bản ghi thô (tỷ lệ dữ liệu có lỗi 5
 python main_pipeline.py --mode full --n 100000 --error-ratio 0.05
 ```
 
-### 2. Chạy Incremental Load Pipeline
-Bổ sung thêm 20.000 bản ghi mới (pipeline tự đọc Watermark từ `data/watermark.json` để chỉ xử lý các bản ghi mới):
+### 2. Chạy Incremental Load (Watermark và Chunk Processing)
+Bổ sung 20.000 bản ghi mới, chia batch 5.000 bản ghi để tối ưu bộ nhớ RAM, tự động Upsert (MERGE INTO) chống lặp dữ liệu:
 ```powershell
-python main_pipeline.py --mode incremental --n 20000 --error-ratio 0.02
+python main_pipeline.py --mode incremental --n 20000 --error-ratio 0.02 --batch-size 5000
 ```
-> **Lưu ý**: Watermark thực tế tăng từ 100 000 → 120 000, 20 000 bản ghi mới được tạo, trong đó 19 601 bản ghi sạch đã được load, khẳng định đây là incremental thực sự.
 
-### 3. Truy vấn SQL Analytics với DuckDB
-Kiểm tra số lượng bản ghi SẠCH tại Target Delta Table và các lý do dữ liệu bị LỖI tại `error_records`:
+### 3. Chạy Backfill Load (Nạp bù dữ liệu quá khứ)
+Nạp bù 10.000 bản ghi lịch sử từ ngày `2026-01-01` đến `2026-01-31` mà không ghi đè hay làm xáo trộn Watermark hiện tại:
+```powershell
+python main_pipeline.py --mode backfill --n 10000 --start-date 2026-01-01 --end-date 2026-01-31
+```
+
+### 4. Truy vấn SQL Analytics với DuckDB
+Kiểm tra số lượng bản ghi SẠCH tại Target Delta Table và các lý do dữ liệu bị LỖI tại `error_records` qua Semantic Views:
 ```powershell
 python query_analytics.py
 ```
 
 ---
 
-## 📊 Thí nghiệm Benchmark & Trực quan hóa
+## 📊 Thí nghiệm Benchmark và Trực quan hóa
 
-Chạy bộ 4 bài thí nghiệm đánh giá chuyên sâu:
+Dự án hỗ trợ 2 bộ thí nghiệm đánh giá hiệu năng chuyên sâu được chuẩn hóa tên gọi rõ ràng:
+
+### 1. Bộ Storage & Format Benchmarks (Đo lường định dạng lưu trữ & Partitioning)
 ```powershell
-python benchmark/run_benchmarks.py
+python 02_tn1_csv_vs_parquet.py --n 100000
+python 03_tn2_partitioning.py --n 100000
+python 04_tn3_scale_benchmark.py
 ```
-- **TN1**: Benchmark thời gian xử lý Pipeline theo Quy mô dữ liệu (100K → 5M bản ghi).
-- **TN2**: So sánh hiệu năng giữa **Full Load** và **Incremental Load**.
-- **TN3**: So sánh xử lý giữa **Dữ liệu 100% Sạch** và **Dữ liệu 10% Lỗi**.
-- **TN4**: Ảnh hưởng của kích thước **Batch Size** (1K, 10K, 50K).
+- **Storage TN1**: So sánh dung lượng & thời gian đọc/ghi giữa **CSV** và **Parquet** (`tn1_csv_vs_parquet.csv`).
+- **Storage TN2**: So sánh tốc độ truy vấn DuckDB khi **Không Partition** vs **Có Partition** theo `category` (`tn2_partitioning.csv`).
+- **Storage TN3**: Đánh giá hiệu năng lưu trữ và lọc dữ liệu CSV vs Parquet theo **Quy mô tăng dần 100K -> 5M** (`tn3_scale_benchmark.csv`).
 
-### 📈 Giới hạn hệ thống
-- Khi chạy benchmark **TN3** với 500 k bản ghi và 10 % dữ liệu lỗi, quá trình sinh dữ liệu gây lỗi **MemoryError** của Pandas (cấp phát bộ nhớ). Điều này cho thấy môi trường hiện tại không đủ RAM để xử lý khối lượng dữ liệu này.
+### 2. Bộ ETL Pipeline Benchmarks (Đo lường luồng xử lý ETL)
+```powershell
+python -m benchmark.run_benchmarks
+```
+- **ETL TN1**: Benchmark tổng thời gian xử lý Pipeline (Extract/Transform/Load) theo **Quy mô dữ liệu** (`etl_tn1_scale.csv`).
+- **ETL TN2**: So sánh hiệu năng giữa **Full Load** và **Incremental Load** (`etl_tn2_full_vs_inc.csv`).
+- **ETL TN3**: So sánh xử lý và khả năng phát hiện lỗi giữa **Dữ liệu 100% Sạch** và **Dữ liệu 10% Lỗi** (`etl_tn3_clean_vs_dirty.csv`).
+- **ETL TN4**: Ảnh hưởng của kích thước **Batch Size** / Chunk Streaming Processing (1K, 10K, 50K) (`etl_tn4_batch_size.csv`).
 
-Vẽ biểu đồ đồ họa cho báo cáo/slide:
+### 3. Tự động xuất biểu đồ đồ họa cho tất cả các bài thử nghiệm
 ```powershell
 python 07_plot_results.py
 ```
-*Tất cả biểu đồ `.png` và bảng kết quả `.csv` sẽ xuất tự động trong thư mục `results/`.*
+*Tự động xuất 7 biểu đồ `.png` (ETL TN1-TN4 và Storage TN1-TN3) cùng các bảng `.csv` trong thư mục `results/`.*
+
+---
+
+## 🐳 Khởi chạy bằng Docker Container
+
+Dự án hỗ trợ đóng gói trọn gói bằng Docker:
+```powershell
+docker compose up --build -d
+```
 
 ---
 

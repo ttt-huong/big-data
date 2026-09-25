@@ -46,17 +46,33 @@ def transform_data(df: pd.DataFrame, metrics: PipelineMetrics) -> pd.DataFrame:
         clean_df["size_mb"] = (clean_df["file_size"] / (1024 ** 2)).round(3)
         clean_df["ingested_at"] = pd.Timestamp.now()
 
+        # Late-Arriving Data Detection (Xử lý dữ liệu muộn so với Watermark)
+        clean_df["is_late_arriving"] = False
+        if "created_at" in clean_df.columns:
+            from pipeline.extract import get_watermark
+            watermark = get_watermark()
+            last_ts = watermark.get("last_watermark_ts")
+            if last_ts:
+                wm_dt = pd.to_datetime(last_ts)
+                clean_dt = pd.to_datetime(clean_df["created_at"], errors="coerce")
+                late_mask = (clean_dt < wm_dt) & clean_dt.notna()
+                clean_df["is_late_arriving"] = late_mask.fillna(False).astype(bool)
+                num_late = int(late_mask.sum())
+                if num_late > 0:
+                    metrics.late_records += num_late
+                    logger.info(f"[Transform] Phát hiện {num_late:,} bản ghi DỮ LIỆU MUỘN (Late-Arriving Data < {last_ts}).")
+
     metrics.transform_time_s = round(time.time() - t0, 3)
     logger.info(f"[Transform] Xử lý xong: {len(clean_df):,} bản ghi SẠCH, {len(error_df):,} bản ghi LỖI ({metrics.transform_time_s:.3f}s)")
     return clean_df
 
 
 def save_error_records(error_df: pd.DataFrame):
-    """Ghi bổ sung (append) các bản ghi lỗi vào file parquet chứa error records."""
+    """Append error records efficiently by writing each batch to a separate Parquet file."""
     error_df = error_df.copy()
     error_df["logged_at"] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Chuẩn hóa cột datetime và object dạng string ISO để tránh lệch kiểu PyArrow timestamp[s] vs timestamp[ms]
+
+    # Normalize datetime and object columns for Parquet compatibility
     for col in error_df.columns:
         if pd.api.types.is_datetime64_any_dtype(error_df[col]):
             error_df[col] = error_df[col].dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -64,13 +80,18 @@ def save_error_records(error_df: pd.DataFrame):
             error_df[col] = error_df[col].astype(str)
 
     table = pa.Table.from_pandas(error_df)
-    if os.path.exists(config.ERROR_RECORDS_PATH):
-        try:
-            existing_table = pq.read_table(config.ERROR_RECORDS_PATH)
-            combined_table = pa.concat_tables([existing_table, table], promote_options="default")
-            pq.write_table(combined_table, config.ERROR_RECORDS_PATH)
-        except Exception as e:
-            logger.error(f"Lỗi khi append error records: {e}")
-            pq.write_table(table, config.ERROR_RECORDS_PATH)
-    else:
-        pq.write_table(table, config.ERROR_RECORDS_PATH)
+
+    # Write each batch into a dedicated folder to avoid costly read‑modify‑write cycles.
+    error_dir = os.path.splitext(config.ERROR_RECORDS_PATH)[0]  # e.g. ./data/error_records
+    os.makedirs(error_dir, exist_ok=True)
+
+    # Unique filename based on timestamp to guarantee ordering.
+    ts = pd.Timestamp.now().strftime("%Y%m%d%H%M%S%f")
+    file_path = os.path.join(error_dir, f"error_{ts}.parquet")
+
+    try:
+        pq.write_table(table, file_path)
+        logger.info(f"[Transform] Ghi {len(error_df):,} bản ghi lỗi vào {file_path}")
+    except Exception as e:
+        logger.error(f"Lỗi khi ghi error record batch: {e}")
+

@@ -18,12 +18,12 @@ def generate_clean_metadata(n: int, seed: int = 42, start_id: int = 1) -> pd.Dat
     rng = np.random.default_rng(seed)
 
     image_id = np.arange(start_id, start_id + n)
-    filename = np.array([f"img_{i:07d}.jpg" for i in image_id])
+    fmt = rng.choice(config.FORMATS, size=n)
+    filename = np.array([f"img_{img_id:07d}.{f}" for img_id, f in zip(image_id, fmt)])
 
     file_size = rng.integers(10_000, 5_000_000, size=n)
     width = rng.choice([64, 128, 256, 512, 1024], size=n)
     height = rng.choice([64, 128, 256, 512, 1024], size=n)
-    fmt = rng.choice(config.FORMATS, size=n)
     category = rng.choice(config.CATEGORIES, size=n)
 
     start_ts = pd.Timestamp(config.DATE_RANGE_START).value // 10**9
@@ -49,12 +49,14 @@ def generate_clean_metadata(n: int, seed: int = 42, start_id: int = 1) -> pd.Dat
 def generate_dirty_metadata(n: int, error_ratio: float = 0.05, seed: int = 42, start_id: int = 1) -> pd.DataFrame:
     """
     Sinh dữ liệu có chứa tỷ lệ lỗi (error_ratio) để kiểm thử tầng Transform & Validation của ETL.
-    Các dạng lỗi cố ý chèn vào:
-    1. image_id bị trùng lặp (duplicate) hoặc Null
-    2. file_size <= 0 (giá trị không hợp lệ)
-    3. category không thuộc danh mục cho phép
-    4. format không hợp lệ (.exe, .txt)
-    5. created_at bị trỏ về tương lai hoặc Null
+    Các dạng lỗi cố ý chèn vào bao gồm 100% kịch bản kiểm thử của tầng validation:
+    1. image_id bị Null (NULL_IMAGE_ID)
+    2. file_size <= 0 (INVALID_FILE_SIZE)
+    3. width/height <= 0 (INVALID_WIDTH, INVALID_HEIGHT)
+    4. category không thuộc danh mục cho phép (INVALID_CATEGORY)
+    5. format không hợp lệ .exe, .pdf (INVALID_FORMAT)
+    6. created_at trỏ về tương lai hoặc Null (FUTURE_CREATED_AT, NULL_CREATED_AT)
+    7. Bản ghi trùng lặp image_id (DUPLICATE_IMAGE_ID)
     """
     df = generate_clean_metadata(n, seed=seed, start_id=start_id)
     rng = np.random.default_rng(seed)
@@ -65,13 +67,15 @@ def generate_dirty_metadata(n: int, error_ratio: float = 0.05, seed: int = 42, s
 
     error_indices = rng.choice(n, size=num_errors, replace=False)
     
-    # Chia danh sách lỗi vào các chỉ mục
-    split_size = max(1, num_errors // 5)
+    # Chia danh sách lỗi thành 7 phần
+    split_size = max(1, num_errors // 7)
     idx_null_id = error_indices[:split_size]
     idx_negative_size = error_indices[split_size:split_size * 2]
-    idx_invalid_cat = error_indices[split_size * 2:split_size * 3]
-    idx_invalid_fmt = error_indices[split_size * 3:split_size * 4]
-    idx_duplicates = error_indices[split_size * 4:]
+    idx_invalid_dim = error_indices[split_size * 2:split_size * 3]
+    idx_invalid_cat = error_indices[split_size * 3:split_size * 4]
+    idx_invalid_fmt = error_indices[split_size * 4:split_size * 5]
+    idx_future_or_null_date = error_indices[split_size * 5:split_size * 6]
+    idx_duplicates = error_indices[split_size * 6:]
 
     # Convert image_id to float type to allow NaN without dtype error
     df["image_id"] = df["image_id"].astype("float64")
@@ -82,13 +86,25 @@ def generate_dirty_metadata(n: int, error_ratio: float = 0.05, seed: int = 42, s
     # 2. Chèn lỗi file_size âm hoặc bằng 0
     df.loc[idx_negative_size, "file_size"] = rng.choice([-500, 0, -1024], size=len(idx_negative_size))
 
-    # 3. Chèn lỗi category sai chuẩn
+    # 3. Chèn lỗi width/height âm hoặc bằng 0
+    if len(idx_invalid_dim) > 0:
+        half_dim = max(1, len(idx_invalid_dim) // 2)
+        df.loc[idx_invalid_dim[:half_dim], "width"] = rng.choice([-100, 0], size=half_dim)
+        df.loc[idx_invalid_dim[half_dim:], "height"] = rng.choice([-100, 0], size=len(idx_invalid_dim) - half_dim)
+
+    # 4. Chèn lỗi category sai chuẩn
     df.loc[idx_invalid_cat, "category"] = rng.choice(["unknown_cat", "racy", "corrupted"], size=len(idx_invalid_cat))
 
-    # 4. Chèn lỗi format lạ
+    # 5. Chèn lỗi format lạ
     df.loc[idx_invalid_fmt, "format"] = rng.choice(["exe", "pdf", "docx"], size=len(idx_invalid_fmt))
 
-    # 5. Chèn lỗi Duplicate image_id
+    # 6. Chèn lỗi created_at tương lai hoặc Null
+    if len(idx_future_or_null_date) > 0:
+        half_date = max(1, len(idx_future_or_null_date) // 2)
+        df.loc[idx_future_or_null_date[:half_date], "created_at"] = pd.Timestamp("2099-01-01 00:00:00")
+        df.loc[idx_future_or_null_date[half_date:], "created_at"] = pd.NaT
+
+    # 7. Chèn lỗi Duplicate image_id
     if len(idx_duplicates) > 0:
         dup_target_ids = rng.choice(df.loc[~df.index.isin(idx_null_id), "image_id"].values, size=len(idx_duplicates))
         df.loc[idx_duplicates, "image_id"] = dup_target_ids

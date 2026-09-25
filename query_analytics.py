@@ -81,7 +81,9 @@ def query_target_store():
         print("   THỐNG KÊ DỮ LIỆU LỖI (ERROR RECORDS STORE)")
         print("-------------------------------------------------------")
         
-        path_to_read = f"{error_dir.replace('\\', '/')}/*.parquet" if os.path.exists(error_dir) and os.listdir(error_dir) else config.ERROR_RECORDS_PATH.replace("\\", "/")
+        normalized_error_dir = error_dir.replace("\\", "/")
+        normalized_default_error = config.ERROR_RECORDS_PATH.replace("\\", "/")
+        path_to_read = f"{normalized_error_dir}/*.parquet" if os.path.exists(error_dir) and os.listdir(error_dir) else normalized_default_error
         print(f"\n--- Top các lý do dữ liệu bị từ chối/bị lỗi (Nguồn: {path_to_read}) ---")
         con.sql(f"""
             SELECT error_reason, COUNT(*) AS count

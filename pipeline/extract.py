@@ -73,32 +73,13 @@ def extract_data(
     # 2. Xử lý theo mode FULL, INCREMENTAL hoặc BACKFILL
     if mode == "incremental":
         watermark = get_watermark()
-        last_id = watermark.get("last_image_id", 0)
-        last_ts = watermark.get("last_watermark_ts")
-
-        logger.info(f"[Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id={last_id}, last_ts={last_ts}")
-
-        # Ưu tiên lọc theo last_image_id nếu có cột image_id
-        if "image_id" in raw_df.columns and last_id > 0:
-            extracted_df = raw_df[raw_df["image_id"] > last_id].copy()
-        elif "created_at" in raw_df.columns and last_ts:
-            extracted_df = raw_df[pd.to_datetime(raw_df["created_at"]) > pd.to_datetime(last_ts)].copy()
-        else:
-            logger.info("[Extract] Chưa có watermark cũ -> Chuyển sang đọc toàn bộ dữ liệu.")
-            extracted_df = raw_df.copy()
+        logger.info(f"[Extract] Chế độ INCREMENTAL LOAD. Watermark hiện tại: last_id={watermark.get('last_image_id', 0)}, last_ts={watermark.get('last_watermark_ts')}")
     elif mode == "backfill":
         logger.info(f"[Extract] Chế độ BACKFILL LOAD. Lọc dữ liệu từ {start_date} đến {end_date}.")
-        extracted_df = raw_df.copy()
-        if "created_at" in extracted_df.columns:
-            extracted_df["_dt"] = pd.to_datetime(extracted_df["created_at"], errors="coerce")
-            if start_date:
-                extracted_df = extracted_df[extracted_df["_dt"] >= pd.to_datetime(start_date)]
-            if end_date:
-                extracted_df = extracted_df[extracted_df["_dt"] <= pd.to_datetime(end_date)]
-            extracted_df.drop(columns=["_dt"], inplace=True)
     else:
         logger.info(f"[Extract] Chế độ FULL LOAD. Đọc toàn bộ dataset ({len(raw_df):,} dòng).")
-        extracted_df = raw_df.copy()
+
+    extracted_df = _filter_by_mode(raw_df, mode=mode, start_date=start_date, end_date=end_date)
 
     # Nếu quy định batch_size -> Lấy batch đầu tiên
     if batch_size and len(extracted_df) > batch_size:
@@ -131,15 +112,16 @@ def _filter_by_mode(
         if "image_id" in df.columns and last_id > 0:
             return df[(df["image_id"].isna()) | (df["image_id"] > last_id)].copy()
         elif "created_at" in df.columns and last_ts:
-            return df[pd.to_datetime(df["created_at"], errors="coerce") > pd.to_datetime(last_ts)].copy()
+            clean_ts = pd.to_datetime(df["created_at"], errors="coerce")
+            return df[(clean_ts.isna()) | (clean_ts > pd.to_datetime(last_ts))].copy()
     elif mode == "backfill":
         if "created_at" in df.columns:
             extracted_df = df.copy()
             extracted_df["_dt"] = pd.to_datetime(extracted_df["created_at"], errors="coerce")
             if start_date:
-                extracted_df = extracted_df[extracted_df["_dt"] >= pd.to_datetime(start_date)]
+                extracted_df = extracted_df[(extracted_df["_dt"].isna()) | (extracted_df["_dt"] >= pd.to_datetime(start_date))]
             if end_date:
-                extracted_df = extracted_df[extracted_df["_dt"] <= pd.to_datetime(end_date)]
+                extracted_df = extracted_df[(extracted_df["_dt"].isna()) | (extracted_df["_dt"] < pd.to_datetime(end_date) + pd.Timedelta(days=1))]
             extracted_df.drop(columns=["_dt"], inplace=True)
             return extracted_df
     return df

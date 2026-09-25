@@ -51,6 +51,8 @@ def load_data(
                 else:
                     is_delta_table = DeltaTable.is_deltatable(target_uri)
             except Exception as check_err:
+                if write_mode == "merge":
+                    raise
                 logger.warning(f"[Load Check Warning] Lỗi kiểm tra Delta Table: {check_err}")
                 is_delta_table = False
 

@@ -30,6 +30,7 @@ class PipelineMetrics:
     start_time: float = field(default_factory=time.time)
     end_time: Optional[float] = None
     total_time_s: float = 0.0
+    initial_watermark_ts: Optional[str] = None
     
     extracted_records: int = 0
     valid_records: int = 0

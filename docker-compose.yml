@@ -19,12 +19,28 @@ services:
       timeout: 5s
       retries: 5
 
+  minio-init:
+    image: minio/mc:latest
+    container_name: lakehouse-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --ignore-existing myminio/lakehouse-metadata;
+      /usr/bin/mc mb --ignore-existing myminio/lakehouse-images;
+      exit 0;
+      "
+
   pipeline:
     build: .
     container_name: lakehouse-pipeline
     depends_on:
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     environment:
       - MINIO_ENDPOINT=http://minio:9000
     volumes:

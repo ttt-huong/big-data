@@ -46,12 +46,11 @@ def transform_data(df: pd.DataFrame, metrics: PipelineMetrics) -> pd.DataFrame:
         clean_df["size_mb"] = (clean_df["file_size"] / (1024 ** 2)).round(3)
         clean_df["ingested_at"] = pd.Timestamp.now()
 
-        # Late-Arriving Data Detection (Xử lý dữ liệu muộn so với Watermark)
+        # Late-Arriving Data Detection (Xử lý dữ liệu muộn so với Watermark chỉ trong chế độ incremental)
         clean_df["is_late_arriving"] = False
-        if "created_at" in clean_df.columns:
+        if metrics and metrics.mode == "incremental" and "created_at" in clean_df.columns:
             from pipeline.extract import get_watermark
-            watermark = get_watermark()
-            last_ts = watermark.get("last_watermark_ts")
+            last_ts = getattr(metrics, "initial_watermark_ts", None) or get_watermark().get("last_watermark_ts")
             if last_ts:
                 wm_dt = pd.to_datetime(last_ts)
                 clean_dt = pd.to_datetime(clean_df["created_at"], errors="coerce")
@@ -94,4 +93,5 @@ def save_error_records(error_df: pd.DataFrame):
         logger.info(f"[Transform] Ghi {len(error_df):,} bản ghi lỗi vào {file_path}")
     except Exception as e:
         logger.error(f"Lỗi khi ghi error record batch: {e}")
+        raise
 

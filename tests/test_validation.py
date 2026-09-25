@@ -65,3 +65,24 @@ def test_dirty_data_generator_full_error_coverage():
     assert "DUPLICATE_IMAGE_ID" in reasons_text
     assert "FUTURE_CREATED_AT" in reasons_text
     assert "NULL_CREATED_AT" in reasons_text
+
+
+def test_invalid_created_at_routing():
+    """Kiểm tra bản ghi chứa created_at không đúng định dạng ngày tháng được chuyển vào DLQ mà không gây crash."""
+    raw_df = pd.DataFrame([
+        {
+            "image_id": 1,
+            "filename": "img_001.jpg",
+            "file_size": 1024,
+            "width": 100,
+            "height": 100,
+            "format": "jpg",
+            "category": "san_pham",
+            "created_at": "not-a-valid-date"
+        }
+    ])
+    clean_df, error_df = validate_and_clean(raw_df)
+    assert clean_df.empty
+    assert len(error_df) == 1
+    assert "INVALID_CREATED_AT" in error_df["error_reason"].iloc[0]
+

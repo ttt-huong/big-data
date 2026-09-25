@@ -52,14 +52,17 @@ def validate_and_clean(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     invalid_fmt_mask = ~df["format"].isin(config.FORMATS)
     error_reasons[invalid_fmt_mask] += "INVALID_FORMAT; "
 
-    # 5. Kiểm tra created_at null hoặc tương lai
+    # 5. Kiểm tra created_at null, không hợp lệ hoặc tương lai
     if "created_at" in df.columns:
         null_ts_mask = df["created_at"].isna()
         error_reasons[null_ts_mask] += "NULL_CREATED_AT; "
         
         parsed_ts = pd.to_datetime(df["created_at"], errors="coerce")
+        invalid_ts_mask = parsed_ts.isna() & (~null_ts_mask)
+        error_reasons[invalid_ts_mask] += "INVALID_CREATED_AT; "
+
         now = pd.Timestamp.now()
-        future_mask = (parsed_ts > now) & (~null_ts_mask)
+        future_mask = (parsed_ts > now) & (~parsed_ts.isna())
         error_reasons[future_mask] += "FUTURE_CREATED_AT; "
 
     # 6. Kiểm tra bản ghi trùng lặp image_id (chỉ giữ bản ghi đầu tiên)

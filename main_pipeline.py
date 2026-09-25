@@ -28,12 +28,23 @@ def run_pipeline(
 ) -> PipelineMetrics:
     """Thực thi toàn bộ luồng Pipeline ETL."""
     metrics = PipelineMetrics(mode=mode)
+    if mode == "incremental":
+        from pipeline.extract import get_watermark
+        metrics.initial_watermark_ts = get_watermark().get("last_watermark_ts")
+
     logger.info(f"===> BẮT ĐẦU CHẠY PIPELINE ETL (MODE: {mode.upper()}) <===")
 
     try:
         if batch_size:
             logger.info(f"Áp dụng Chunk Processing với batch_size={batch_size:,}")
-            for chunk_df in extract_data_chunks(source_input, chunk_size=batch_size, mode=mode, metrics=metrics):
+            for chunk_df in extract_data_chunks(
+                source_input,
+                chunk_size=batch_size,
+                mode=mode,
+                metrics=metrics,
+                start_date=start_date,
+                end_date=end_date,
+            ):
                 if chunk_df.empty:
                     continue
                 clean_chunk = transform_data(chunk_df, metrics=metrics)

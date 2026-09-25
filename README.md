@@ -88,7 +88,7 @@ pip install -r requirements.txt
 python 00_setup_minio.py
 ```
 
-### 4. Chạy Automated Unit Tests (Pytest — 11/11 PASS)
+### 4. Chạy Automated Unit Tests (Pytest — 14 PASS)
 ```powershell
 pytest tests/ -v
 ```

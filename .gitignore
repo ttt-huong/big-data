@@ -4,6 +4,7 @@ data/*
 *.parquet
 *.csv
 !results/*.csv
+logs/*
 
 # Python cache & venv
 __pycache__/

@@ -3,7 +3,5 @@ numpy
 pyarrow
 duckdb
 deltalake
-boto3
-Pillow
-Faker
 matplotlib
+pytest

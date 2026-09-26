@@ -1,14 +1,17 @@
-from .extract import extract_data, get_watermark, save_watermark
-from .transform import transform_data
+from .extract import extract_data, get_watermark, read_chunks, save_watermark
 from .load import load_data
-from .logging_utils import logger, PipelineMetrics
+from .logging_utils import PipelineMetrics, logger
+from .transform import transform_data
+from .validation import validate_and_clean
 
 __all__ = [
     "extract_data",
     "get_watermark",
+    "read_chunks",
     "save_watermark",
-    "transform_data",
     "load_data",
-    "logger",
     "PipelineMetrics",
+    "logger",
+    "transform_data",
+    "validate_and_clean",
 ]

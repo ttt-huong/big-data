@@ -1,130 +1,147 @@
-# ĐỒ ÁN: XÂY DỰNG PIPELINE ETL/ELT XỬ LÝ VÀ TÍCH HỢP DỮ LIỆU QUY MÔ LỚN
+# Local ETL/Lakehouse Prototype
 
-> Stack công nghệ: **Python + MinIO (S3 Object Storage) + Parquet + Delta Lake + DuckDB** (Không dùng Spark cluster, không dùng Airflow/Kafka cồng kềnh, chạy mượt trên laptop).
-> *Lưu ý*: `boto3`, `Pillow` và `Faker` được khai báo trong `requirements.txt` nhưng **không được sử dụng** trong mã nguồn.
+Project học phần chạy trên **một máy Windows**, tập trung vào một pipeline ETL vừa phải và có thể demo end-to-end. Core pipeline không phụ thuộc MinIO, Docker hay distributed processing.
 
----
+## Kiến trúc
 
-## 🎯 Kiến trúc Pipeline ETL
-
-```mermaid
-flowchart TD
-    Gen["Data Generator<br/>(Clean & Dirty Data)"] --> Raw["Source Data<br/>(CSV / Parquet / Raw Data)"]
-    Raw --> Ext["EXTRACT Layer<br/>(Full Load / Incremental via Watermark)"]
-    Ext --> Trans["TRANSFORM & VALIDATE Layer<br/>(Clean, Ép kiểu, Deduplicate, Bắt lỗi)"]
-    
-    Trans -->|Valid Clean Data| Load["LOAD Layer<br/>(Delta Lake / MinIO S3 Target)"]
-    Trans -->|Invalid Error Data| ErrStore["ERROR RECORDS STORE<br/>(data/error_records.parquet)"]
-    
-    Load --> Duck["DuckDB SQL Analytics Engine"]
-    Load & ErrStore --> Bench["Benchmark Suite & Visualizer<br/>(4 Thí nghiệm + Biểu đồ PNG)"]
+```text
+Generator
+  -> raw/*.parquet
+  -> Extract theo chunk
+  -> Transform + Validation
+  -> data/errors/*.parquet (DLQ)
+  -> local Delta Lake: data/lakehouse/clean_metadata
+  -> DuckDB analytics
+  -> benchmark CSV
 ```
 
----
+Công nghệ sử dụng:
 
-## 📂 Cấu trúc thư mục dự án
+- Python, Pandas, NumPy
+- PyArrow và Parquet
+- Delta Lake local (`deltalake`/delta-rs)
+- DuckDB
+- Pytest
+- Matplotlib cho phần benchmark mở rộng
 
-```
+MinIO không còn là dependency bắt buộc. Registry image MinIO trước đây không ổn định, trong khi mục tiêu project là một demo local chạy được. Delta Lake local vẫn cung cấp transaction log, versioning và MERGE/upsert mà không cần object storage ngoài.
+
+## Cấu trúc chính
+
+```text
 big-data/
-├── config.py                 # Cấu hình MinIO, đường dẫn local & các hằng số
-├── docker-compose.yml        # Khởi chạy MinIO S3 Object Storage
-├── main_pipeline.py          # Entrypoint chạy Pipeline ETL (Full / Incremental)
-├── query_analytics.py        # Truy vấn DuckDB SQL trên Target Store & Error Records
-├── 00_setup_minio.py         # Khởi tạo MinIO Buckets & Ảnh mẫu demo
-├── 07_plot_results.py        # Tự động xuất biểu đồ PNG kết quả benchmark
-├── requirements.txt          # Danh sách thư viện Python
-│
-├── generator/                # Module sinh dữ liệu giả lập quy mô lớn
-│   ├── __init__.py
-│   └── data_generator.py     # Sinh dữ liệu sạch & dữ liệu bẩn (Dirty Data)
-│
-├── pipeline/                 # Các tầng chính của Pipeline ETL
-│   ├── __init__.py
-│   ├── extract.py            # Layer Extract (Full Load & Incremental Load Watermark)
-│   ├── transform.py          # Layer Transform & Enrich dữ liệu
-│   ├── validation.py         # Quy tắc kiểm soát chất lượng dữ liệu (Quality Rules)
-│   ├── load.py               # Layer Load ghi vào Delta Lake trên MinIO (có Retry)
-│   └── logging_utils.py      # Tracker thống kê thời gian & ghi Log hệ thống
-│
-├── benchmark/                # Suite đánh giá hiệu năng
-│   ├── __init__.py
-│   └── run_benchmarks.py     # Thực thi 4 bài thí nghiệm ETL tự động
-│
-├── data/                     # Thư mục chứa dữ liệu thô, watermark & error records
-├── logs/                     # File log quá trình chạy etl_pipeline.log
-└── results/                  # File số liệu .csv và biểu đồ đồ họa .png
+├── data/
+│   ├── raw/                 # source Parquet được sinh khi chạy
+│   ├── processed/           # file trung gian/benchmark
+│   ├── errors/              # DLQ theo từng batch Parquet
+│   └── lakehouse/           # local Delta table
+├── generator/
+│   └── data_generator.py
+├── pipeline/
+│   ├── extract.py           # CSV/Parquet và chunk reader
+│   ├── transform.py         # enrichment và DLQ writer
+│   ├── validation.py        # data quality rules
+│   ├── load.py              # local Delta MERGE/upsert
+│   └── logging_utils.py
+├── benchmark/
+│   └── run_benchmarks.py
+├── tests/
+├── main_pipeline.py
+├── query_analytics.py
+├── 01_generate_metadata.py
+├── config.py
+├── requirements.txt
+└── README.md
 ```
 
----
+## Cài đặt
 
-## ⚙️ Hướng dẫn cài đặt & Khởi chạy
-
-### 1. Khởi động MinIO (S3 Object Storage)
 ```powershell
-docker compose up -d
-```
-*Giao diện MinIO Console*: `http://localhost:9001` (Username: `minioadmin` / Password: `minioadmin`).
-
-### 2. Cài đặt thư viện Python
-```powershell
-python -m venv venv
-.\venv\Scripts\activate
+python -m venv .venv
+.\.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Chuẩn bị Object Storage MinIO
+## Chạy tests
+
 ```powershell
-python 00_setup_minio.py
+pytest tests/ -v
 ```
 
----
+Test kiểm tra generator, validation, duplicate, chunk reader, Full/Incremental watermark, Delta MERGE/idempotency và DuckDB analytics.
 
-## 🚀 Các lệnh thực thi Pipeline ETL
+## Chạy pipeline
 
-### 1. Chạy Full Load Pipeline
-Chạy Full Load với 100.000 bản ghi thô (tỷ lệ dữ liệu có lỗi 5%):
+### Sinh source Parquet
+
 ```powershell
-python main_pipeline.py --mode full --n 100000 --error-ratio 0.05
+python 01_generate_metadata.py --rows 100000 --error-ratio 0.05
 ```
 
-### 2. Chạy Incremental Load Pipeline
-Bổ sung thêm 20.000 bản ghi mới (pipeline tự đọc Watermark từ `data/watermark.json` để chỉ xử lý các bản ghi mới):
-```powershell
-python main_pipeline.py --mode incremental --n 20000 --error-ratio 0.02
-```
-> **Lưu ý**: Watermark thực tế tăng từ 100 000 → 120 000, 20 000 bản ghi mới được tạo, trong đó 19 601 bản ghi sạch đã được load, khẳng định đây là incremental thực sự.
+### Full Load
 
-### 3. Truy vấn SQL Analytics với DuckDB
-Kiểm tra số lượng bản ghi SẠCH tại Target Delta Table và các lý do dữ liệu bị LỖI tại `error_records`:
+```powershell
+python main_pipeline.py --mode full --rows 100000 --error-ratio 0.05 --chunk-size 25000
+```
+
+Full Load tạo source Parquet, validate dữ liệu, lưu record lỗi vào `data/errors/`, ghi clean data vào Delta Lake local và cập nhật watermark.
+
+### Incremental Load
+
+```powershell
+python main_pipeline.py --mode incremental --rows 20000 --error-ratio 0.02 --chunk-size 5000
+```
+
+Incremental dùng `data/watermark.json` và chỉ đọc record có `image_id` lớn hơn watermark. Target dùng Delta MERGE theo `image_id`, nên chạy lại cùng input không tạo duplicate.
+
+### Backfill demo
+
+Backfill ở mức demo dùng source có ID cũ hơn một mốc chỉ định:
+
+```powershell
+python main_pipeline.py --mode backfill --rows 10000 --backfill-before-id 5000 --chunk-size 2500
+```
+
+Backfill không cập nhật watermark chính.
+
+### DuckDB analytics
+
 ```powershell
 python query_analytics.py
 ```
 
----
+Analytics gồm tổng clean records, phân bố category/format, phân bố year/month và tổng error records trong DLQ.
 
-## 📊 Thí nghiệm Benchmark & Trực quan hóa
+## Benchmark
 
-Chạy bộ 4 bài thí nghiệm đánh giá chuyên sâu:
+Chạy các benchmark local, không tạo số liệu giả:
+
 ```powershell
-python benchmark/run_benchmarks.py
+python -m benchmark.run_benchmarks
 ```
-- **TN1**: Benchmark thời gian xử lý Pipeline theo Quy mô dữ liệu (100K → 5M bản ghi).
-- **TN2**: So sánh hiệu năng giữa **Full Load** và **Incremental Load**.
-- **TN3**: So sánh xử lý giữa **Dữ liệu 100% Sạch** và **Dữ liệu 10% Lỗi**.
-- **TN4**: Ảnh hưởng của kích thước **Batch Size** (1K, 10K, 50K).
 
-### 📈 Giới hạn hệ thống
-- Khi chạy benchmark **TN3** với 500 k bản ghi và 10 % dữ liệu lỗi, quá trình sinh dữ liệu gây lỗi **MemoryError** của Pandas (cấp phát bộ nhớ). Điều này cho thấy môi trường hiện tại không đủ RAM để xử lý khối lượng dữ liệu này.
+Kết quả được ghi vào:
 
-Vẽ biểu đồ đồ họa cho báo cáo/slide:
-```powershell
-python 07_plot_results.py
-```
-*Tất cả biểu đồ `.png` và bảng kết quả `.csv` sẽ xuất tự động trong thư mục `results/`.*
+- `results/storage_benchmark.csv`: CSV vs Parquet size/read/write.
+- `results/chunk_benchmark.csv`: full read vs chunk read.
+- `results/query_benchmark.csv`: DuckDB query time.
 
----
+Benchmark mặc định dùng các mức `10K`, `50K`, `100K`. Có thể thay đổi trong `config.py`.
 
-## 🛡️ Dừng dịch vụ khi hoàn tất
-```powershell
-docker compose down
-```
+## Data quality rules
+
+Record hợp lệ cần có:
+
+- `image_id` không null.
+- `file_size > 0`.
+- `width > 0`, `height > 0`.
+- `category` thuộc danh sách cho phép.
+- `format` thuộc danh sách cho phép.
+- `created_at` parse được và không ở tương lai.
+- `image_id` không duplicate trong cùng batch.
+
+Record lỗi được lưu riêng với `error_reason` trong `data/errors/`.
+
+## Ghi chú phạm vi
+
+Project không sử dụng Spark, Hadoop, Kafka, Airflow, Kubernetes, Dask cluster, Ray cluster hoặc hệ thống nhiều máy. Docker/MinIO không cần thiết cho core demo; pipeline local là đường chạy chính để bảo đảm reproducibility trên máy cá nhân.

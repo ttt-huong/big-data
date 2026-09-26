@@ -37,6 +37,10 @@ def validate_and_clean(frame: pd.DataFrame, seen_ids: set[int] | None = None) ->
         clean["image_id"] = clean["image_id"].astype(np.int64)
         clean["file_size"] = clean["file_size"].astype(np.int64)
         clean["created_at"] = pd.to_datetime(clean["created_at"])
+        if "source_arrived_at" in clean.columns:
+            clean["source_arrived_at"] = pd.to_datetime(clean["source_arrived_at"])
+        else:
+            clean["source_arrived_at"] = clean["created_at"]
         clean["year"] = clean["created_at"].dt.year
         clean["month"] = clean["created_at"].dt.month
     return clean, errors

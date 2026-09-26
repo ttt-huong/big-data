@@ -11,21 +11,34 @@ import config
 
 def get_watermark() -> Dict[str, Any]:
     if not os.path.exists(config.WATERMARK_FILE):
-        return {"last_image_id": 0}
+        return {"last_image_id": 0, "processed_sources": []}
     with open(config.WATERMARK_FILE, "r", encoding="utf-8") as stream:
-        return json.load(stream)
+        data = json.load(stream)
+        if "processed_sources" not in data:
+            data["processed_sources"] = []
+        return data
 
 
-def save_watermark(last_image_id: int) -> None:
+def save_watermark(last_image_id: int, processed_sources: Optional[list[str]] = None) -> None:
     temporary_path = f"{config.WATERMARK_FILE}.tmp"
+    current = get_watermark()
+    if processed_sources is None:
+        sources = current.get("processed_sources", [])
+    else:
+        sources = sorted(list(set(processed_sources)))
+    payload = {
+        "last_image_id": int(last_image_id),
+        "processed_sources": sources,
+    }
+    os.makedirs(os.path.dirname(os.path.abspath(config.WATERMARK_FILE)), exist_ok=True)
     with open(temporary_path, "w", encoding="utf-8") as stream:
-        json.dump({"last_image_id": int(last_image_id)}, stream, indent=2)
+        json.dump(payload, stream, indent=2)
     os.replace(temporary_path, config.WATERMARK_FILE)
 
 
 def _filter_frame(frame: pd.DataFrame, mode: str, watermark: int, backfill_before_id: Optional[int]) -> pd.DataFrame:
     if mode == "incremental":
-        return frame[frame["image_id"] > watermark].copy()
+        return frame.copy()
     if mode == "backfill" and backfill_before_id is not None:
         return frame[frame["image_id"] < backfill_before_id].copy()
     return frame.copy()

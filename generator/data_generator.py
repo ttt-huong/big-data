@@ -6,7 +6,13 @@ import pandas as pd
 import config
 
 
-def generate_metadata(rows: int, error_ratio: float = 0.0, seed: int = 42, start_id: int = 1) -> pd.DataFrame:
+def generate_metadata(
+    rows: int,
+    error_ratio: float = 0.0,
+    seed: int = 42,
+    start_id: int = 1,
+    source_arrived_at: object = None,
+) -> pd.DataFrame:
     if rows < 1:
         raise ValueError("rows must be greater than zero")
     if not 0 <= error_ratio <= 1:
@@ -23,6 +29,14 @@ def generate_metadata(rows: int, error_ratio: float = 0.0, seed: int = 42, start
         ),
         unit="s",
     )
+    if source_arrived_at is not None:
+        if isinstance(source_arrived_at, (pd.Series, np.ndarray, list)):
+            arrived_at = pd.to_datetime(source_arrived_at)
+        else:
+            arrived_at = pd.to_datetime([source_arrived_at] * rows)
+    else:
+        arrived_at = created_at.copy()
+
     frame = pd.DataFrame({
         "image_id": image_ids,
         "filename": [f"img_{image_id:07d}.{fmt}" for image_id, fmt in zip(image_ids, formats)],
@@ -32,6 +46,7 @@ def generate_metadata(rows: int, error_ratio: float = 0.0, seed: int = 42, start
         "format": formats,
         "category": rng.choice(config.CATEGORIES, size=rows),
         "created_at": created_at,
+        "source_arrived_at": arrived_at,
     })
     frame["year"] = frame["created_at"].dt.year
     frame["month"] = frame["created_at"].dt.month
@@ -51,9 +66,9 @@ def generate_metadata(rows: int, error_ratio: float = 0.0, seed: int = 42, start
     return frame
 
 
-def generate_clean_metadata(rows: int, seed: int = 42, start_id: int = 1) -> pd.DataFrame:
-    return generate_metadata(rows, seed=seed, start_id=start_id)
+def generate_clean_metadata(rows: int, seed: int = 42, start_id: int = 1, source_arrived_at: object = None) -> pd.DataFrame:
+    return generate_metadata(rows, seed=seed, start_id=start_id, source_arrived_at=source_arrived_at)
 
 
-def generate_dirty_metadata(rows: int, error_ratio: float = 0.05, seed: int = 42, start_id: int = 1) -> pd.DataFrame:
-    return generate_metadata(rows, error_ratio=error_ratio, seed=seed, start_id=start_id)
+def generate_dirty_metadata(rows: int, error_ratio: float = 0.05, seed: int = 42, start_id: int = 1, source_arrived_at: object = None) -> pd.DataFrame:
+    return generate_metadata(rows, error_ratio=error_ratio, seed=seed, start_id=start_id, source_arrived_at=source_arrived_at)

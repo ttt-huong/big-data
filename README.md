@@ -6,106 +6,170 @@ Dự án triển khai hoàn chỉnh pipeline ETL/ELT theo kiến trúc **Local-f
 
 Hệ thống được thiết kế chạy thực tế trên môi trường máy đơn, tập trung vào tính đúng đắn của dữ liệu (data correctness), tính bất biến (idempotency), khả năng phục hồi lỗi (fault-tolerance), và tính khả thi trong việc tái lập thực nghiệm (reproducibility).
 
+Mặc dù tên đề tài quy ước bao quát hướng tiếp cận ETL/ELT trong kỹ thuật dữ liệu, kiến trúc thực tế được hiện thực hóa trong mã nguồn là **pipeline ETL (Extract → Transform → Load)** tuần tự, local-first.
+
 ---
 
 ## 1. Kiến trúc Tổng quan
 
-Dữ liệu di chuyển qua các tầng xử lý tuần tự, kiểm soát chặt chẽ trạng thái và chất lượng:
+Toàn bộ pipeline được tổ chức theo 5 nhóm thành phần phối hợp chặt chẽ:
 
-```text
-       [Data Generator / Source Files] (CSV / Parquet)
-                      │
-                      ▼
-               [Extract Stage]
-                      │ (Chunk-based Processing)
-                      ▼
-              [Transform Stage]
-                      │
-         ┌────────────┴────────────┐
-         ▼                         ▼
-   [Validation]             [Data Quality]
-         │                         │
-         ├─────────────────────────┤
-         ▼                         ▼
-   [Clean Records]          [Error Records (DLQ)]
-         │                         │
-         │                         ▼
-         │                 data/errors/*.parquet
-         │                 (Deterministic Hashing)
-         ▼
-  [Load Engine] (Full / Incremental / Backfill)
-         │
-         ▼
-  [Delta MERGE / Upsert] ◄─── data/watermark.json
-         │                   (High Watermark + processed_sources)
-         ▼
-[Local Delta Lake Table] (data/lakehouse/clean_metadata)
-         │
-         ▼
-  [DuckDB Analytics Engine]
+```mermaid
+flowchart LR
+    %% Subgraphs for 5 groups
+    subgraph G1["1. Source & Extraction"]
+        direction TB
+        GEN["Data Generator"] --> RAW[("Raw CSV / Parquet")]
+        RAW --> EXT["Extract Data"]
+        EXT --> CHUNK["Chunk Processing\n(chunk_size)"]
+    end
+
+    subgraph G2["2. Processing & Data Quality"]
+        direction TB
+        CHUNK --> TR["Transform & Enrichment\n(size_mb, aspect_ratio)"]
+        TR --> VAL{"Validation &\nQuality Rules"}
+        VAL -- "Invalid" --> ERR["Error Split"]
+        VAL -- "Valid" --> CLEAN["Clean Records\n(+ is_late flag)"]
+    end
+
+    subgraph G5["5. State & Reliability"]
+        direction TB
+        STATE[("State: watermark.json\n- last_image_id\n- processed_sources")]
+        RETRY{"Retry Handler\n(Exponential Backoff)"}
+    end
+
+    subgraph G3["3. Loading Modes"]
+        direction TB
+        CLEAN --> LOAD["Load Engine"]
+        LOAD --> M_FULL["Full Mode\n(Scan All Sources)"]
+        LOAD --> M_INC["Incremental Mode\n(Filter by processed_sources)"]
+        LOAD --> M_BF["Backfill Mode\n(image_id < backfill_before_id)"]
+    end
+
+    subgraph G4["4. Storage & Analytics"]
+        direction TB
+        ERR --> DLQ[("Dead Letter Queue\n(data/errors/*.parquet)")]
+        UPSERT["Delta MERGE / Upsert\n(image_id + merge_schema)"]
+        DELTA[("Local Delta Lake\n(data/lakehouse/clean_metadata)")]
+        DUCK["DuckDB Analytics Engine"]
+        UPSERT --> DELTA
+        DELTA --> DUCK
+        DLQ -.-> DUCK
+    end
+
+    %% Connections
+    STATE -.->|"Read state"| M_INC
+    M_INC -.->|"Update watermark & sources"| STATE
+    M_FULL -.->|"Reset & update state"| STATE
+
+    M_FULL --> UPSERT
+    M_INC --> UPSERT
+    M_BF --> UPSERT
+
+    UPSERT -- "Transient error" --> RETRY
+    RETRY -- "Retry attempt" --> UPSERT
+    RETRY -- "Max attempts exceeded" --> FAIL["Pipeline Abort"]
+
+    %% Styling
+    classDef source fill:#E3F2FD,stroke:#1E88E5,stroke-width:1px,color:#0D47A1;
+    classDef process fill:#F3E5F5,stroke:#8E24AA,stroke-width:1px,color:#4A148C;
+    classDef load fill:#FFF3E0,stroke:#FB8C00,stroke-width:1px,color:#E65100;
+    classDef storage fill:#E8F5E9,stroke:#43A047,stroke-width:1px,color:#1B5E20;
+    classDef state fill:#ECEFF1,stroke:#607D8B,stroke-width:1px,color:#263238;
+
+    class GEN,RAW,EXT,CHUNK source;
+    class TR,VAL,ERR,CLEAN process;
+    class LOAD,M_FULL,M_INC,M_BF load;
+    class DLQ,UPSERT,DELTA,DUCK storage;
+    class STATE,RETRY,FAIL state;
 ```
 
-### Lưu trữ và Quản lý Trạng thái
-- **Target Storage:** Lưu trữ tại `data/lakehouse/clean_metadata` dưới định dạng Delta Lake cục bộ (sử dụng delta-rs), hỗ trợ ACID transactions, versioning và upsert (MERGE). Phân vùng (partition) theo cột `category`.
-- **Dead Letter Queue (DLQ):** Lưu trữ tại `data/errors/` dưới dạng các file Parquet chứa các bản ghi không đạt chuẩn chất lượng cùng mã định danh lỗi xác định.
-- **State Management:** Lưu tại `data/watermark.json` ghi nhận high-watermark (`last_image_id`) và danh sách file nguồn đã xử lý thành công (`processed_sources`).
+### Thành phần Kiến trúc
+- **Source & Extraction:** Dữ liệu nguồn dạng CSV hoặc Parquet được đọc tuần tự theo các khối (`chunk_size`) nhằm tối ưu bộ nhớ.
+- **Processing & Data Quality:** Dữ liệu được tính toán thuộc tính bổ sung, áp dụng 7 quy tắc kiểm tra chất lượng (Data Quality Rules) và phân tách rạch ròi thành bản ghi sạch (Clean) hoặc bản ghi lỗi (DLQ).
+- **Loading Modes:** Điều phối 3 chế độ nạp (Full, Incremental, Backfill) phù hợp với từng ngữ cảnh vận hành.
+- **Storage & Analytics:** Bảng đích Delta Lake cục bộ đảm bảo chuẩn giao dịch ACID và phân vùng theo `category`; DuckDB phục vụ truy vấn OLAP trực tiếp trên Delta table và DLQ Parquet.
+- **State & Reliability:** Tệp `data/watermark.json` lưu trữ con trỏ `last_image_id` cùng danh sách `processed_sources`; cơ chế Retry tự động xử lý các lỗi I/O và lock tạm thời.
 
 ---
 
 ## 2. Công nghệ Sử dụng
 
-Dự án sử dụng bộ công cụ hiện đại, tối ưu hóa cho môi trường local-first:
+Dự án sử dụng bộ công cụ hiện đại, tối ưu cho môi trường local-first:
 
-| Công nghệ | Vai trò trong hệ sinh thái |
+| Công nghệ | Vai trò trong hệ thống |
 |---|---|
 | **Python** (3.10+) | Ngôn ngữ phát triển toàn bộ pipeline và logic điều phối |
-| **Pandas & NumPy** | Chuyển đổi dữ liệu, vector hóa và kiểm tra điều kiện validation |
+| **Pandas & NumPy** | Xử lý khung dữ liệu, vector hóa và kiểm tra điều kiện validation |
 | **PyArrow** | Đọc ghi định dạng Parquet theo lô (batch/chunk) hiệu năng cao |
-| **Delta Lake (`deltalake`)** | Định dạng bảng Lakehouse, kiểm soát giao dịch ACID và MERGE |
-| **DuckDB** | Động cơ OLAP nhúng truy vấn phân tích trực tiếp trên Delta Lake và DLQ |
+| **Delta Lake (`deltalake`)** | Định dạng bảng Lakehouse, kiểm soát giao dịch ACID, schema evolution và MERGE |
+| **DuckDB** | Động cơ OLAP nhúng truy vấn SQL trực tiếp trên Delta Lake và DLQ |
 | **Pytest** | Bộ kiểm thử tự động toàn diện kiểm chứng mọi chức năng nghiệp vụ |
 | **Matplotlib** | Trực quan hóa kết quả đo lường và benchmark |
 
-> **Phạm vi kiến trúc:** Hệ thống không yêu cầu hạ tầng phân tán phức tạp (Spark, Kafka, Airflow, Kubernetes, MinIO). Pipeline vận hành theo mô hình batch local-first nhưng áp dụng các khái niệm watermark và xử lý dữ liệu muộn (late-arriving) cùng lưu trữ Lakehouse cục bộ, chạy độc lập và ổn định trên một máy tính cá nhân.
+> **Phạm vi kiến trúc:** Hệ thống không yêu cầu hạ tầng phân tán phức tạp (Spark, Kafka, Airflow, Kubernetes, MinIO). Pipeline vận hành theo mô hình batch local-first nhưng áp dụng các khái niệm watermark và xử lý dữ liệu muộn (late-arriving) cùng lưu trữ Lakehouse cục bộ, bảo đảm tính độc lập, khả năng tái lập thực nghiệm và chạy ổn định trên một máy tính cá nhân.
 
 ---
 
 ## 3. Các Chức năng Cốt lõi
 
-### 3.1. Pipeline ETL/ELT theo Chunk
-- **Extract:** Đọc dữ liệu từ CSV/Parquet theo từng chunk có kích thước cấu hình linh hoạt (`chunk_size`), tránh tràn bộ nhớ RAM khi xử lý tập dữ liệu lớn.
-- **Transform:** Làm giàu dữ liệu bằng cách tính dung lượng (`size_mb`), tỉ lệ khung hình (`aspect_ratio`), gán nhãn thời gian xử lý (`ingested_at`) và cờ dữ liệu muộn (`is_late`).
+### 3.1. Pipeline ETL theo Chunk
+- **Extract:** Trích xuất dữ liệu từ CSV/Parquet theo từng chunk có kích thước linh hoạt (`chunk_size`), tránh cạn kiệt RAM khi xử lý tập dữ liệu lớn.
+- **Transform:** Làm giàu dữ liệu thông qua tính dung lượng (`size_mb`), tỉ lệ khung hình (`aspect_ratio`), gán nhãn thời gian nạp (`ingested_at`) và cờ đánh dấu dữ liệu muộn (`is_late`).
 - **Load:** Nạp dữ liệu vào Delta Lake thông qua cơ chế idempotent upsert.
 
 ### 3.2. Incremental Loading (Nạp Tăng dần)
-- Hệ thống duy trì con trỏ tăng dần thông qua `last_image_id` và theo dõi danh tính từng lô dữ liệu qua `processed_sources`.
-- Khi chạy chế độ `incremental`, pipeline chỉ nạp các file nguồn mới xuất hiện mà chưa nằm trong `processed_sources`.
+- Hệ thống quản lý con trỏ tăng dần qua `last_image_id` và định danh từng lô dữ liệu thông qua `processed_sources`.
+- Khi chạy chế độ `incremental`, pipeline chỉ nạp các file nguồn mới xuất hiện chưa có tên trong `processed_sources`.
 - Không loại bỏ cứng dữ liệu dựa trên ID ở bước Extract, cho phép tiếp nhận cả dữ liệu bình thường và dữ liệu đến trễ nằm trong batch mới.
 - High-watermark được cập nhật tăng đơn điệu: `new_watermark = max(current_watermark, max_id_processed)`.
 
 ### 3.3. Xử lý Dữ liệu Muộn (Late-arriving Data)
 Hệ thống phân định rạch ròi 4 trường dữ liệu và ngữ nghĩa thời gian:
 1. `image_id`: Định danh bản ghi và con trỏ gia số (incremental cursor).
-2. `created_at`: Event Time (thời điểm sự kiện thực tế diễn ra ở thế giới thực).
+2. `created_at`: Event Time (thời điểm sự kiện thực tế diễn ra).
 3. `source_arrived_at`: Source Arrival Time (thời điểm hệ thống nguồn tiếp nhận dữ liệu và đóng gói vào batch).
 4. `ingested_at`: Pipeline Processing Time (thời điểm pipeline thực hiện nạp dữ liệu).
 
-**Quy tắc nghiệp vụ phát hiện dữ liệu muộn (business rule của prototype):**
-$$\text{is\_late} = \text{created\_at.date} < \text{source\_arrived\_at.date}$$
+Business rule của prototype:
+`is_late = created_at.date < source_arrived_at.date`
 
-- Dữ liệu đến muộn không bị định nghĩa máy móc theo điều kiện $ID \le \text{watermark}$.
-- Bản ghi đến trễ trong batch mới vẫn được đưa vào pipeline, được đánh dấu `is_late = True`, được nạp an toàn vào Delta Lake thông qua `MERGE` và **tuyệt đối không làm lùi watermark**.
+```mermaid
+flowchart TD
+    REC["Bản ghi trong source batch mới"] --> PARSE["Phân tích thời gian"]
+    PARSE --> T1["created_at (Event Time)"]
+    PARSE --> T2["source_arrived_at (Source Arrival Time)"]
+
+    T1 & T2 --> COMP{"created_at.date <\nsource_arrived_at.date?"}
+
+    COMP -- "Đúng" --> LATE["Gán is_late = True\n(Dữ liệu đến trễ)"]
+    COMP -- "Sai" --> NORM["Gán is_late = False\n(Dữ liệu thông thường)"]
+
+    LATE & NORM --> INGEST["Làm giàu bản ghi\n(ingested_at = Processing Time)"]
+    INGEST --> MERGE["Delta MERGE theo image_id\n(Nạp bản ghi sạch vào Delta Lake)"]
+
+    MERGE --> WM["Cập nhật Watermark đơn điệu\nnew_watermark = max(current_watermark, max_id)"]
+
+    classDef default fill:#F8F9FA,stroke:#B0BEC5,stroke-width:1px,color:#263238;
+    classDef highlight fill:#FFF9C4,stroke:#FBC02D,stroke-width:1px,color:#F57F17;
+    classDef success fill:#E8F5E9,stroke:#43A047,stroke-width:1px,color:#1B5E20;
+    class COMP highlight;
+    class MERGE,WM success;
+```
+
+- Dữ liệu đến muộn không bị định nghĩa máy móc theo điều kiện `image_id <= watermark`.
+- Bản ghi đến trễ trong batch mới vẫn được đưa vào pipeline, được đánh dấu `is_late = True`, được nạp an toàn vào Delta Lake thông qua `MERGE` và không làm lùi watermark.
 - Cả bản ghi hợp lệ lẫn bản ghi lỗi (DLQ) đều giữ lại cờ `is_late` để phục vụ audit.
 
 ### 3.4. Cơ chế Thử lại (Transient Error Retry)
 - Áp dụng Retry Pattern với Exponential Backoff tại tầng nạp Delta Lake (`pipeline/load.py`).
-- Chỉ thử lại có chọn lọc đối với các lỗi tạm thời (transient errors) về I/O, file lock contention hoặc protocol: `IOError`, `OSError`, `CommitFailedError`, `DeltaProtocolError`.
-- Các lỗi logic hoặc lỗi cấu trúc dữ liệu (`ValueError`, `TypeError`) sẽ thất bại ngay lập tức mà không retry vô ích.
-- Tham số cấu hình: `DEFAULT_MAX_ATTEMPTS = 3`, `DEFAULT_RETRY_DELAY = 0.5s`, `DEFAULT_BACKOFF_FACTOR = 2.0`. Số lần retry được thống kê minh bạch trong `retry_count`.
+- Chỉ thử lại có chọn lọc đối với các lỗi tạm thời (transient errors) về I/O, file lock hoặc protocol: `IOError`, `OSError`, `CommitFailedError`, `DeltaProtocolError`.
+- Các lỗi logic hoặc sai cấu trúc dữ liệu (`ValueError`, `TypeError`) sẽ dừng ngay lập tức mà không retry vô ích.
+- Tham số mặc định: `DEFAULT_MAX_ATTEMPTS = 3`, `DEFAULT_RETRY_DELAY = 0.5s`, `DEFAULT_BACKOFF_FACTOR = 2.0`. Số lần retry được ghi nhận minh bạch trong `retry_count`.
 
 ### 3.5. Nạp lại Lịch sử (Backfill)
 - Cho phép chủ động quét và nạp lại một khoảng dữ liệu lịch sử thông qua cờ `--backfill-before-id`.
-- **Tính cách ly hoàn toàn:** Quá trình Backfill **không** cập nhật `last_image_id` và **không** ghi nhận vào `processed_sources`, bảo toàn nguyên vẹn chu trình Incremental.
+- **Tính cách ly hoàn toàn:** Quá trình Backfill không cập nhật `last_image_id` và không ghi nhận vào `processed_sources`, bảo toàn nguyên vẹn chu trình Incremental.
 - Kết hợp với Delta MERGE giúp việc chạy Backfill nhiều lần không gây trùng lặp dữ liệu đích.
 
 ### 3.6. Kiểm soát Lỗi & DLQ Idempotency
@@ -236,16 +300,16 @@ Hệ thống đã chứng minh khả năng xử lý dữ liệu trễ qua kịch
    - Trạng thái `processed_sources` = `['batch_1.parquet']`.
 
 2. **Lô 2 (`batch_2.parquet`):**
-   - ID 105 (Bình thường): `created_at` = 2026-09-23, `source_arrived_at` = 2026-09-23 $\rightarrow$ `is_late = False`.
-   - ID 95 (Dữ liệu muộn): `created_at` = 2026-09-20, `source_arrived_at` = 2026-09-23 $\rightarrow$ `is_late = True`.
+   - ID 105 (Bình thường): `created_at` = 2026-09-23, `source_arrived_at` = 2026-09-23 -> `is_late = False`.
+   - ID 95 (Dữ liệu muộn): `created_at` = 2026-09-20, `source_arrived_at` = 2026-09-23 -> `is_late = True`.
    - Thực thi Incremental:
      - Pipeline phát hiện `batch_2.parquet` là nguồn mới, nạp toàn bộ mà không drop ID 95.
      - Cả 105 và 95 đều được ghi thành công vào Delta Lake.
-     - Watermark tăng lên: $\max(102, 105) =$ **105** (không bị lùi về 95).
+     - Watermark tăng lên: `max(102, 105) = 105` (không bị lùi về 95).
      - Trạng thái `processed_sources` = `['batch_1.parquet', 'batch_2.parquet']`.
 
 3. **Chạy lại Lô 2 (Rerun Idempotency):**
-   - Pipeline phát hiện file đã nằm trong `processed_sources` $\rightarrow$ Tự động kết thúc sớm (extracted = 0, loaded = 0).
+   - Pipeline phát hiện file đã nằm trong `processed_sources` -> Tự động kết thúc sớm (extracted = 0, loaded = 0).
    - Bảng Delta giữ nguyên chính xác 5 bản ghi sạch, watermark giữ nguyên ở 105, không phát sinh duplicate.
 
 ---

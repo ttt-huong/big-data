@@ -15,73 +15,57 @@ Mặc dù tên đề tài quy ước bao quát hướng tiếp cận ETL/ELT tro
 Toàn bộ pipeline được tổ chức theo 5 nhóm thành phần phối hợp chặt chẽ:
 
 ```mermaid
-flowchart LR
-    %% Subgraphs for 5 groups
-    subgraph G1["1. Source & Extraction"]
-        direction TB
-        GEN["Data Generator"] --> RAW[("Raw CSV / Parquet")]
-        RAW --> EXT["Extract Data"]
-        EXT --> CHUNK["Chunk Processing\n(chunk_size)"]
+flowchart TD
+    %% Source & Extraction
+    SRC["Data Generator / Source"] --> RAW[("Raw CSV / Parquet")]
+    RAW --> EXT["Extract Stage"]
+    EXT --> CHUNK["Chunk Processing (chunk_size)"]
+
+    %% Processing & Validation
+    CHUNK --> TR["Transform & Enrichment\n(size_mb, aspect_ratio, ingested_at)"]
+    LATE["Late-arriving Detection\ncreated_at vs source_arrived_at -> is_late"] -.-> TR
+    TR --> VAL{"Validation &\nQuality Rules"}
+
+    %% Split
+    VAL -- "Valid records" --> CLEAN["Clean Records"]
+    VAL -- "Invalid records" --> ERR["Error Records"]
+    ERR --> DLQ[("Dead Letter Queue\ndata/errors/*.parquet")]
+
+    %% Loading Engine with 3 modes
+    CLEAN --> LOAD["Load Engine"]
+    LOAD --> FULL["Full Load\n(scan all source files)"]
+    LOAD --> INC["Incremental Load\n(new source files)"]
+    LOAD --> BF["Backfill Mode\n(historical filter)"]
+
+    %% State Management
+    STATE[("State: watermark.json\n- last_image_id\n- processed_sources")]
+    INC <-->|"Filter sources &\nupdate cursor"| STATE
+    FULL -.->|"Reset state"| STATE
+
+    %% Load to Target & Retry
+    FULL --> MERGE["Delta MERGE / Upsert\n(target.image_id = source.image_id)"]
+    INC --> MERGE
+    BF --> MERGE
+
+    %% Retry Subgraph / Logic
+    subgraph RETRY_BOX["Transient Error Retry"]
+        MERGE -- "IOError / OSError / Lock" --> RETRY["Retry Handler\n(Exponential Backoff)"]
+        RETRY -- "Attempt again" --> MERGE
+        RETRY -- "Max attempts exceeded" --> FAIL["Pipeline Abort"]
     end
 
-    subgraph G2["2. Processing & Data Quality"]
-        direction TB
-        CHUNK --> TR["Transform & Enrichment\n(size_mb, aspect_ratio)"]
-        TR --> VAL{"Validation &\nQuality Rules"}
-        VAL -- "Invalid" --> ERR["Error Split"]
-        VAL -- "Valid" --> CLEAN["Clean Records\n(+ is_late flag)"]
-    end
+    %% Storage & Analytics
+    MERGE --> DELTA[("Local Delta Lake Table\ndata/lakehouse/clean_metadata")]
+    DELTA --> DUCK["DuckDB Analytics Engine"]
+    DLQ -.->|"Query errors"| DUCK
 
-    subgraph G5["5. State & Reliability"]
-        direction TB
-        STATE[("State: watermark.json\n- last_image_id\n- processed_sources")]
-        RETRY{"Retry Handler\n(Exponential Backoff)"}
-    end
+    %% Minimalist Styles
+    classDef default fill:#FFFFFF,stroke:#37474F,stroke-width:1px,color:#212121;
+    classDef stateNode fill:#F8F9FA,stroke:#455A64,stroke-width:1.5px,color:#212121;
+    classDef branch fill:#FFFFFF,stroke:#607D8B,stroke-width:1px,stroke-dasharray: 3 3,color:#37474F;
 
-    subgraph G3["3. Loading Modes"]
-        direction TB
-        CLEAN --> LOAD["Load Engine"]
-        LOAD --> M_FULL["Full Mode\n(Scan All Sources)"]
-        LOAD --> M_INC["Incremental Mode\n(Filter by processed_sources)"]
-        LOAD --> M_BF["Backfill Mode\n(image_id < backfill_before_id)"]
-    end
-
-    subgraph G4["4. Storage & Analytics"]
-        direction TB
-        ERR --> DLQ[("Dead Letter Queue\n(data/errors/*.parquet)")]
-        UPSERT["Delta MERGE / Upsert\n(image_id + merge_schema)"]
-        DELTA[("Local Delta Lake\n(data/lakehouse/clean_metadata)")]
-        DUCK["DuckDB Analytics Engine"]
-        UPSERT --> DELTA
-        DELTA --> DUCK
-        DLQ -.-> DUCK
-    end
-
-    %% Connections
-    STATE -.->|"Read state"| M_INC
-    M_INC -.->|"Update watermark & sources"| STATE
-    M_FULL -.->|"Reset & update state"| STATE
-
-    M_FULL --> UPSERT
-    M_INC --> UPSERT
-    M_BF --> UPSERT
-
-    UPSERT -- "Transient error" --> RETRY
-    RETRY -- "Retry attempt" --> UPSERT
-    RETRY -- "Max attempts exceeded" --> FAIL["Pipeline Abort"]
-
-    %% Styling
-    classDef source fill:#E3F2FD,stroke:#1E88E5,stroke-width:1px,color:#0D47A1;
-    classDef process fill:#F3E5F5,stroke:#8E24AA,stroke-width:1px,color:#4A148C;
-    classDef load fill:#FFF3E0,stroke:#FB8C00,stroke-width:1px,color:#E65100;
-    classDef storage fill:#E8F5E9,stroke:#43A047,stroke-width:1px,color:#1B5E20;
-    classDef state fill:#ECEFF1,stroke:#607D8B,stroke-width:1px,color:#263238;
-
-    class GEN,RAW,EXT,CHUNK source;
-    class TR,VAL,ERR,CLEAN process;
-    class LOAD,M_FULL,M_INC,M_BF load;
-    class DLQ,UPSERT,DELTA,DUCK storage;
-    class STATE,RETRY,FAIL state;
+    class STATE,DELTA,DLQ stateNode;
+    class LATE,RETRY_BOX branch;
 ```
 
 ### Thành phần Kiến trúc
@@ -136,25 +120,24 @@ Business rule của prototype:
 
 ```mermaid
 flowchart TD
-    REC["Bản ghi trong source batch mới"] --> PARSE["Phân tích thời gian"]
-    PARSE --> T1["created_at (Event Time)"]
-    PARSE --> T2["source_arrived_at (Source Arrival Time)"]
+    BATCH["Source Batch mới"] --> DATES["Phân tích mốc thời gian"]
+    DATES --> T1["created_at (Event Time)"]
+    DATES --> T2["source_arrived_at (Source Arrival Time)"]
 
-    T1 & T2 --> COMP{"created_at.date <\nsource_arrived_at.date?"}
+    T1 & T2 --> COMP{"So sánh ngày:\ncreated_at.date <\nsource_arrived_at.date?"}
 
-    COMP -- "Đúng" --> LATE["Gán is_late = True\n(Dữ liệu đến trễ)"]
-    COMP -- "Sai" --> NORM["Gán is_late = False\n(Dữ liệu thông thường)"]
+    COMP -- "Đúng" --> LATE["is_late = True\n(Dữ liệu đến trễ)"]
+    COMP -- "Sai" --> NORM["is_late = False\n(Dữ liệu thông thường)"]
 
-    LATE & NORM --> INGEST["Làm giàu bản ghi\n(ingested_at = Processing Time)"]
-    INGEST --> MERGE["Delta MERGE theo image_id\n(Nạp bản ghi sạch vào Delta Lake)"]
+    LATE & NORM --> PROC["Transform & Validation"]
+    PROC --> TARGET["Delta MERGE / DLQ"]
 
-    MERGE --> WM["Cập nhật Watermark đơn điệu\nnew_watermark = max(current_watermark, max_id)"]
+    TARGET --> WM["Cập nhật Watermark đơn điệu\nnew_watermark = max(current_watermark, max_id)"]
 
-    classDef default fill:#F8F9FA,stroke:#B0BEC5,stroke-width:1px,color:#263238;
-    classDef highlight fill:#FFF9C4,stroke:#FBC02D,stroke-width:1px,color:#F57F17;
-    classDef success fill:#E8F5E9,stroke:#43A047,stroke-width:1px,color:#1B5E20;
-    class COMP highlight;
-    class MERGE,WM success;
+    %% Minimalist Styles
+    classDef default fill:#FFFFFF,stroke:#37474F,stroke-width:1px,color:#212121;
+    classDef subtle fill:#F8F9FA,stroke:#455A64,stroke-width:1.5px,color:#212121;
+    class BATCH,WM subtle;
 ```
 
 - Dữ liệu đến muộn không bị định nghĩa máy móc theo điều kiện `image_id <= watermark`.

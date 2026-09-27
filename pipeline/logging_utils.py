@@ -27,6 +27,7 @@ class PipelineMetrics:
     extracted_records: int = 0
     valid_records: int = 0
     error_records: int = 0
+    late_records: int = 0
     loaded_records: int = 0
     retry_count: int = 0
     status: str = "PENDING"

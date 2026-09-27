@@ -19,7 +19,7 @@ def validate_and_clean(frame: pd.DataFrame, seen_ids: set[int] | None = None) ->
     reasons[~data["category"].isin(config.CATEGORIES)] += "INVALID_CATEGORY;"
     reasons[~data["format"].isin(config.FORMATS)] += "INVALID_FORMAT;"
 
-    parsed_dates = pd.to_datetime(data["created_at"], errors="coerce")
+    parsed_dates = pd.to_datetime(data["created_at"], format="mixed", errors="coerce")
     reasons[parsed_dates.isna()] += "INVALID_CREATED_AT;"
     reasons[parsed_dates > pd.Timestamp.now()] += "FUTURE_CREATED_AT;"
 
@@ -36,9 +36,9 @@ def validate_and_clean(frame: pd.DataFrame, seen_ids: set[int] | None = None) ->
     if not clean.empty:
         clean["image_id"] = clean["image_id"].astype(np.int64)
         clean["file_size"] = clean["file_size"].astype(np.int64)
-        clean["created_at"] = pd.to_datetime(clean["created_at"])
+        clean["created_at"] = pd.to_datetime(clean["created_at"], format="mixed")
         if "source_arrived_at" in clean.columns:
-            clean["source_arrived_at"] = pd.to_datetime(clean["source_arrived_at"])
+            clean["source_arrived_at"] = pd.to_datetime(clean["source_arrived_at"], format="mixed")
         else:
             clean["source_arrived_at"] = clean["created_at"]
         clean["year"] = clean["created_at"].dt.year

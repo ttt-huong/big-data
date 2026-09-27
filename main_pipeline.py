@@ -65,6 +65,10 @@ def run_pipeline(
                 clean, errors = transform_data(chunk, seen_ids=seen_ids, batch_id=batch_id)
                 metrics.valid_records += len(clean)
                 metrics.error_records += len(errors)
+                if "is_late" in clean:
+                    metrics.late_records += int(clean["is_late"].sum())
+                if "is_late" in errors:
+                    metrics.late_records += int(errors["is_late"].sum())
                 metrics.loaded_records += load_data(
                     clean,
                     max_attempts=max_attempts,
@@ -87,10 +91,16 @@ def run_pipeline(
     return metrics
 
 
-def create_source(rows: int, error_ratio: float, mode: str) -> str:
+def create_source(rows: int, error_ratio: float, mode: str, late_ratio: float = 0.0) -> str:
     watermark = int(get_watermark().get("last_image_id", 0))
     start_id = watermark + 1 if mode == "incremental" else 1
-    frame = generate_metadata(rows, error_ratio=error_ratio, seed=42 if mode == "full" else 99, start_id=start_id)
+    frame = generate_metadata(
+        rows,
+        error_ratio=error_ratio,
+        seed=42 if mode == "full" else 99,
+        start_id=start_id,
+        late_ratio=late_ratio,
+    )
     source_name = f"{mode}_{start_id}_{start_id + rows - 1}.parquet"
     source_path = os.path.join(config.RAW_DATA_DIR, source_name)
     frame.to_parquet(source_path, index=False)
@@ -102,6 +112,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["full", "incremental", "backfill"], default="full")
     parser.add_argument("--rows", "--n", dest="rows", type=int, default=config.DEFAULT_ROWS)
     parser.add_argument("--error-ratio", type=float, default=config.DEFAULT_ERROR_RATIO)
+    parser.add_argument("--late-ratio", type=float, default=0.0)
     parser.add_argument("--chunk-size", "--batch-size", dest="chunk_size", type=int, default=25_000)
     parser.add_argument("--backfill-before-id", type=int, default=None)
     parser.add_argument("--max-attempts", type=int, default=config.DEFAULT_MAX_ATTEMPTS)
@@ -114,7 +125,7 @@ if __name__ == "__main__":
         if os.path.exists(config.ERROR_DATA_DIR):
             shutil.rmtree(config.ERROR_DATA_DIR)
             os.makedirs(config.ERROR_DATA_DIR, exist_ok=True)
-    source = create_source(args.rows, args.error_ratio, args.mode)
+    source = create_source(args.rows, args.error_ratio, args.mode, args.late_ratio)
     started = time.perf_counter()
     result = run_pipeline(
         source,

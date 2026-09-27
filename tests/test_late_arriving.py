@@ -109,6 +109,7 @@ def test_4_5_6_7_mixed_batch_late_record_monotonic_watermark_and_rerun(tmp_path,
     m2 = run_pipeline(str(batch2_file), mode="incremental", chunk_size=10)
     assert m2.status == "SUCCESS"
     assert m2.loaded_records == 2
+    assert m2.late_records == 1
 
     # Check watermark after Batch 2 (TEST 4 & TEST 6: 102 -> 105, never decreases to 95)
     state2 = get_watermark()

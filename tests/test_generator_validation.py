@@ -33,3 +33,10 @@ def test_generator_rejects_invalid_error_ratio():
         pass
     else:
         raise AssertionError("error_ratio outside [0, 1] should fail")
+
+
+def test_generator_marks_requested_late_records():
+    frame = generate_metadata(100, seed=7, late_ratio=0.2)
+    is_late = frame["created_at"].dt.date < frame["source_arrived_at"].dt.date
+
+    assert int(is_late.sum()) == 20

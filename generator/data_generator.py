@@ -12,11 +12,16 @@ def generate_metadata(
     seed: int = 42,
     start_id: int = 1,
     source_arrived_at: object = None,
+    late_ratio: float = 0.0,
 ) -> pd.DataFrame:
     if rows < 1:
         raise ValueError("rows must be greater than zero")
     if not 0 <= error_ratio <= 1:
         raise ValueError("error_ratio must be between 0 and 1")
+    if not 0 <= late_ratio <= 1:
+        raise ValueError("late_ratio must be between 0 and 1")
+    if source_arrived_at is not None and late_ratio > 0:
+        raise ValueError("source_arrived_at and late_ratio cannot be used together")
 
     rng = np.random.default_rng(seed)
     image_ids = np.arange(start_id, start_id + rows)
@@ -36,6 +41,11 @@ def generate_metadata(
             arrived_at = pd.to_datetime([source_arrived_at] * rows)
     else:
         arrived_at = created_at.copy()
+        late_count = int(rows * late_ratio)
+        if late_count:
+            late_indexes = rng.choice(rows, size=late_count, replace=False)
+            arrived_at = pd.Series(created_at)
+            arrived_at.iloc[late_indexes] += pd.Timedelta(days=1)
 
     frame = pd.DataFrame({
         "image_id": image_ids,
@@ -66,9 +76,35 @@ def generate_metadata(
     return frame
 
 
-def generate_clean_metadata(rows: int, seed: int = 42, start_id: int = 1, source_arrived_at: object = None) -> pd.DataFrame:
-    return generate_metadata(rows, seed=seed, start_id=start_id, source_arrived_at=source_arrived_at)
+def generate_clean_metadata(
+    rows: int,
+    seed: int = 42,
+    start_id: int = 1,
+    source_arrived_at: object = None,
+    late_ratio: float = 0.0,
+) -> pd.DataFrame:
+    return generate_metadata(
+        rows,
+        seed=seed,
+        start_id=start_id,
+        source_arrived_at=source_arrived_at,
+        late_ratio=late_ratio,
+    )
 
 
-def generate_dirty_metadata(rows: int, error_ratio: float = 0.05, seed: int = 42, start_id: int = 1, source_arrived_at: object = None) -> pd.DataFrame:
-    return generate_metadata(rows, error_ratio=error_ratio, seed=seed, start_id=start_id, source_arrived_at=source_arrived_at)
+def generate_dirty_metadata(
+    rows: int,
+    error_ratio: float = 0.05,
+    seed: int = 42,
+    start_id: int = 1,
+    source_arrived_at: object = None,
+    late_ratio: float = 0.0,
+) -> pd.DataFrame:
+    return generate_metadata(
+        rows,
+        error_ratio=error_ratio,
+        seed=seed,
+        start_id=start_id,
+        source_arrived_at=source_arrived_at,
+        late_ratio=late_ratio,
+    )

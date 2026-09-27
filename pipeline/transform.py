@@ -34,9 +34,9 @@ def compute_is_late(frame: pd.DataFrame) -> pd.Series:
     if frame.empty or "created_at" not in frame.columns:
         return pd.Series(False, index=frame.index, dtype=bool)
 
-    created_dt = pd.to_datetime(frame["created_at"], errors="coerce")
+    created_dt = pd.to_datetime(frame["created_at"], format="mixed", errors="coerce")
     if "source_arrived_at" in frame.columns:
-        arrived_dt = pd.to_datetime(frame["source_arrived_at"], errors="coerce")
+        arrived_dt = pd.to_datetime(frame["source_arrived_at"], format="mixed", errors="coerce")
     else:
         arrived_dt = created_dt
 

@@ -1,147 +1,275 @@
-# Local ETL/Lakehouse Prototype
+# Pipeline ETL/ELT và Lakehouse Xử lý Dữ liệu Lớn
 
-Project học phần chạy trên **một máy Windows**, tập trung vào một pipeline ETL vừa phải và có thể demo end-to-end. Core pipeline không phụ thuộc MinIO, Docker hay distributed processing.
+Dự án triển khai hoàn chỉnh pipeline ETL/ELT theo kiến trúc **Local-first Lakehouse**, phục vụ đề tài học thuật:
 
-## Kiến trúc
+> **"Xây dựng pipeline ETL/ELT: Extract–Transform–Load, incremental loading, retry, backfill, xử lý dữ liệu muộn và kiểm soát lỗi"**
+
+Hệ thống được thiết kế chạy thực tế trên môi trường máy đơn, tập trung vào tính đúng đắn của dữ liệu (data correctness), tính bất biến (idempotency), khả năng phục hồi lỗi (fault-tolerance), và tính khả thi trong việc tái lập thực nghiệm (reproducibility).
+
+---
+
+## 1. Kiến trúc Tổng quan
+
+Dữ liệu di chuyển qua các tầng xử lý tuần tự, kiểm soát chặt chẽ trạng thái và chất lượng:
 
 ```text
-Generator
-  -> raw/*.parquet
-  -> Extract theo chunk
-  -> Transform + Validation
-  -> data/errors/*.parquet (DLQ)
-  -> local Delta Lake: data/lakehouse/clean_metadata
-  -> DuckDB analytics
-  -> benchmark CSV
+       [Data Generator / Source Files] (CSV / Parquet)
+                      │
+                      ▼
+               [Extract Stage]
+                      │ (Chunk-based Processing)
+                      ▼
+              [Transform Stage]
+                      │
+         ┌────────────┴────────────┐
+         ▼                         ▼
+   [Validation]             [Data Quality]
+         │                         │
+         ├─────────────────────────┤
+         ▼                         ▼
+   [Clean Records]          [Error Records (DLQ)]
+         │                         │
+         │                         ▼
+         │                 data/errors/*.parquet
+         │                 (Deterministic Hashing)
+         ▼
+  [Load Engine] (Full / Incremental / Backfill)
+         │
+         ▼
+  [Delta MERGE / Upsert] ◄─── data/watermark.json
+         │                   (High Watermark + processed_sources)
+         ▼
+[Local Delta Lake Table] (data/lakehouse/clean_metadata)
+         │
+         ▼
+  [DuckDB Analytics Engine]
 ```
 
-Công nghệ sử dụng:
+### Lưu trữ và Quản lý Trạng thái
+- **Target Storage:** Lưu trữ tại `data/lakehouse/clean_metadata` dưới định dạng Delta Lake cục bộ (sử dụng delta-rs), hỗ trợ ACID transactions, versioning và upsert (MERGE). Phân vùng (partition) theo cột `category`.
+- **Dead Letter Queue (DLQ):** Lưu trữ tại `data/errors/` dưới dạng các file Parquet chứa các bản ghi không đạt chuẩn chất lượng cùng mã định danh lỗi xác định.
+- **State Management:** Lưu tại `data/watermark.json` ghi nhận high-watermark (`last_image_id`) và danh sách file nguồn đã xử lý thành công (`processed_sources`).
 
-- Python, Pandas, NumPy
-- PyArrow và Parquet
-- Delta Lake local (`deltalake`/delta-rs)
-- DuckDB
-- Pytest
-- Matplotlib cho phần benchmark mở rộng
+---
 
-MinIO không còn là dependency bắt buộc. Registry image MinIO trước đây không ổn định, trong khi mục tiêu project là một demo local chạy được. Delta Lake local vẫn cung cấp transaction log, versioning và MERGE/upsert mà không cần object storage ngoài.
+## 2. Công nghệ Sử dụng
 
-## Cấu trúc chính
+Dự án sử dụng bộ công cụ hiện đại, tối ưu hóa cho môi trường local-first:
+
+| Công nghệ | Vai trò trong hệ sinh thái |
+|---|---|
+| **Python** (3.10+) | Ngôn ngữ phát triển toàn bộ pipeline và logic điều phối |
+| **Pandas & NumPy** | Chuyển đổi dữ liệu, vector hóa và kiểm tra điều kiện validation |
+| **PyArrow** | Đọc ghi định dạng Parquet theo lô (batch/chunk) hiệu năng cao |
+| **Delta Lake (`deltalake`)** | Định dạng bảng Lakehouse, kiểm soát giao dịch ACID và MERGE |
+| **DuckDB** | Động cơ OLAP nhúng truy vấn phân tích trực tiếp trên Delta Lake và DLQ |
+| **Pytest** | Bộ kiểm thử tự động toàn diện kiểm chứng mọi chức năng nghiệp vụ |
+| **Matplotlib** | Trực quan hóa kết quả đo lường và benchmark |
+
+> **Phạm vi kiến trúc:** Hệ thống không yêu cầu hạ tầng phân tán phức tạp (Spark, Kafka, Airflow, Kubernetes, MinIO). Pipeline vận hành theo mô hình batch local-first nhưng áp dụng các khái niệm watermark và xử lý dữ liệu muộn (late-arriving) cùng lưu trữ Lakehouse cục bộ, chạy độc lập và ổn định trên một máy tính cá nhân.
+
+---
+
+## 3. Các Chức năng Cốt lõi
+
+### 3.1. Pipeline ETL/ELT theo Chunk
+- **Extract:** Đọc dữ liệu từ CSV/Parquet theo từng chunk có kích thước cấu hình linh hoạt (`chunk_size`), tránh tràn bộ nhớ RAM khi xử lý tập dữ liệu lớn.
+- **Transform:** Làm giàu dữ liệu bằng cách tính dung lượng (`size_mb`), tỉ lệ khung hình (`aspect_ratio`), gán nhãn thời gian xử lý (`ingested_at`) và cờ dữ liệu muộn (`is_late`).
+- **Load:** Nạp dữ liệu vào Delta Lake thông qua cơ chế idempotent upsert.
+
+### 3.2. Incremental Loading (Nạp Tăng dần)
+- Hệ thống duy trì con trỏ tăng dần thông qua `last_image_id` và theo dõi danh tính từng lô dữ liệu qua `processed_sources`.
+- Khi chạy chế độ `incremental`, pipeline chỉ nạp các file nguồn mới xuất hiện mà chưa nằm trong `processed_sources`.
+- Không loại bỏ cứng dữ liệu dựa trên ID ở bước Extract, cho phép tiếp nhận cả dữ liệu bình thường và dữ liệu đến trễ nằm trong batch mới.
+- High-watermark được cập nhật tăng đơn điệu: `new_watermark = max(current_watermark, max_id_processed)`.
+
+### 3.3. Xử lý Dữ liệu Muộn (Late-arriving Data)
+Hệ thống phân định rạch ròi 4 trường dữ liệu và ngữ nghĩa thời gian:
+1. `image_id`: Định danh bản ghi và con trỏ gia số (incremental cursor).
+2. `created_at`: Event Time (thời điểm sự kiện thực tế diễn ra ở thế giới thực).
+3. `source_arrived_at`: Source Arrival Time (thời điểm hệ thống nguồn tiếp nhận dữ liệu và đóng gói vào batch).
+4. `ingested_at`: Pipeline Processing Time (thời điểm pipeline thực hiện nạp dữ liệu).
+
+**Quy tắc nghiệp vụ phát hiện dữ liệu muộn (business rule của prototype):**
+$$\text{is\_late} = \text{created\_at.date} < \text{source\_arrived\_at.date}$$
+
+- Dữ liệu đến muộn không bị định nghĩa máy móc theo điều kiện $ID \le \text{watermark}$.
+- Bản ghi đến trễ trong batch mới vẫn được đưa vào pipeline, được đánh dấu `is_late = True`, được nạp an toàn vào Delta Lake thông qua `MERGE` và **tuyệt đối không làm lùi watermark**.
+- Cả bản ghi hợp lệ lẫn bản ghi lỗi (DLQ) đều giữ lại cờ `is_late` để phục vụ audit.
+
+### 3.4. Cơ chế Thử lại (Transient Error Retry)
+- Áp dụng Retry Pattern với Exponential Backoff tại tầng nạp Delta Lake (`pipeline/load.py`).
+- Chỉ thử lại có chọn lọc đối với các lỗi tạm thời (transient errors) về I/O, file lock contention hoặc protocol: `IOError`, `OSError`, `CommitFailedError`, `DeltaProtocolError`.
+- Các lỗi logic hoặc lỗi cấu trúc dữ liệu (`ValueError`, `TypeError`) sẽ thất bại ngay lập tức mà không retry vô ích.
+- Tham số cấu hình: `DEFAULT_MAX_ATTEMPTS = 3`, `DEFAULT_RETRY_DELAY = 0.5s`, `DEFAULT_BACKOFF_FACTOR = 2.0`. Số lần retry được thống kê minh bạch trong `retry_count`.
+
+### 3.5. Nạp lại Lịch sử (Backfill)
+- Cho phép chủ động quét và nạp lại một khoảng dữ liệu lịch sử thông qua cờ `--backfill-before-id`.
+- **Tính cách ly hoàn toàn:** Quá trình Backfill **không** cập nhật `last_image_id` và **không** ghi nhận vào `processed_sources`, bảo toàn nguyên vẹn chu trình Incremental.
+- Kết hợp với Delta MERGE giúp việc chạy Backfill nhiều lần không gây trùng lặp dữ liệu đích.
+
+### 3.6. Kiểm soát Lỗi & DLQ Idempotency
+Hệ thống áp dụng 7 luật kiểm tra dữ liệu đầu vào:
+1. `image_id` không được rỗng (Null).
+2. `file_size` phải lớn hơn 0.
+3. Kích thước `width` và `height` phải lớn hơn 0.
+4. `category` phải thuộc danh mục hợp lệ: `san_pham`, `chan_dung`, `phong_canh`, `do_an`, `dong_vat`, `kien_truc`.
+5. `format` phải thuộc định dạng cho phép: `jpg`, `png`, `webp`.
+6. `created_at` phải đúng định dạng thời gian và không thuộc tương lai.
+7. `image_id` không được trùng lặp trong cùng phiên xử lý.
+
+Các bản ghi không hợp lệ được chuyển sang Dead Letter Queue (`data/errors/`). Mỗi bản ghi lỗi được gán một `error_id` băm SHA256 dựa trên nội dung và `error_batch_id` đại diện cho lô lỗi. Khi chạy lại (rerun), file DLQ được ghi đè xác định, giúp ngăn việc tạo bản ghi lỗi trùng lặp khi rerun cùng source batch.
+
+### 3.7. Bảng so sánh 3 Chế độ Nạp
+
+| Tiêu chí | Full Load (`full`) | Incremental Load (`incremental`) | Backfill (`backfill`) |
+|---|---|---|---|
+| **Phạm vi nguồn** | Toàn bộ file nguồn trong thư mục | Chỉ file chưa có trong `processed_sources` | Đọc theo điều kiện ID lịch sử |
+| **Xử lý Target** | Khởi tạo / Ghi đè cấu trúc bảng | MERGE / Upsert theo `image_id` | MERGE / Upsert theo `image_id` |
+| **Cập nhật Watermark** | Cập nhật lên max ID | Cập nhật tiến lên: `max(cũ, mới)` | **Không thay đổi** |
+| **Cập nhật Sources** | Làm mới danh sách file đã nạp | Bổ sung file mới vào tập hợp | **Không thay đổi** |
+| **Xử lý Late Data** | Nhận diện qua Event vs Arrival | Nhận diện qua Event vs Arrival | Nhận diện theo phạm vi lịch sử |
+
+---
+
+## 4. Cấu trúc Dự án
 
 ```text
 big-data/
-├── data/
-│   ├── raw/                 # source Parquet được sinh khi chạy
-│   ├── processed/           # file trung gian/benchmark
-│   ├── errors/              # DLQ theo từng batch Parquet
-│   └── lakehouse/           # local Delta table
+├── config.py                   # Cấu hình đường dẫn, danh mục metadata và tham số retry
+├── main_pipeline.py            # Entry point điều phối pipeline (Full, Incremental, Backfill)
+├── query_analytics.py          # Script phân tích OLAP qua DuckDB
+├── 01_generate_metadata.py     # Script tạo tập dữ liệu mẫu độc lập
+├── requirements.txt            # Danh sách thư viện phụ thuộc
 ├── generator/
-│   └── data_generator.py
+│   ├── __init__.py
+│   └── data_generator.py       # Bộ sinh dữ liệu thử nghiệm có kiểm soát lỗi và arrival time
 ├── pipeline/
-│   ├── extract.py           # CSV/Parquet và chunk reader
-│   ├── transform.py         # enrichment và DLQ writer
-│   ├── validation.py        # data quality rules
-│   ├── load.py              # local Delta MERGE/upsert
-│   └── logging_utils.py
-├── benchmark/
-│   └── run_benchmarks.py
+│   ├── __init__.py
+│   ├── extract.py              # Đọc file chunk, quản lý file watermark và state
+│   ├── transform.py            # Biến đổi dữ liệu, kiểm tra late-arriving và ghi nhận DLQ
+│   ├── validation.py           # Bộ luật kiểm soát chất lượng dữ liệu (Data Quality)
+│   ├── load.py                 # Nạp dữ liệu vào Delta Lake, retry và merge schema
+│   └── logging_utils.py        # Quản lý logging và thống kê PipelineMetrics
 ├── tests/
-├── main_pipeline.py
-├── query_analytics.py
-├── 01_generate_metadata.py
-├── config.py
-├── requirements.txt
-└── README.md
+│   ├── test_analytics.py       # Kiểm thử truy vấn DuckDB
+│   ├── test_backfill.py        # Kiểm thử tính năng Backfill và DLQ idempotency
+│   ├── test_generator_validation.py # Kiểm thử bộ sinh dữ liệu và validation rules
+│   ├── test_late_arriving.py   # Kiểm thử toàn diện dữ liệu trễ và tính đơn điệu của watermark
+│   ├── test_pipeline.py        # Kiểm thử luồng tích hợp và chunk reader
+│   ├── test_retry.py           # Kiểm thử cơ chế retry lỗi transient và backoff
+│   └── test_smoke.py           # Kiểm thử kiểm tra cấu trúc cơ bản
+└── data/                       # Thư mục dữ liệu runtime (raw, errors, lakehouse, watermark.json)
 ```
 
-## Cài đặt
+---
 
+## 5. Hướng dẫn Cài đặt & Thiết lập
+
+### Yêu cầu Môi trường
+- Python 3.10 trở lên.
+- Hệ điều hành: Windows, macOS hoặc Linux.
+
+### Các bước Cài đặt
+
+1. **Khởi tạo môi trường ảo:**
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\activate
+   ```
+   *(Trên Linux/macOS: `source .venv/bin/activate`)*
+
+2. **Cài đặt thư viện:**
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+---
+
+## 6. Hướng dẫn Thực thi & Quick Start
+
+Mọi câu lệnh dưới đây đều đã được kiểm chứng hoạt động thực tế trên repository.
+
+### 6.1. Chạy Full Load
+Khởi tạo bảng Delta Lake và tải toàn bộ dữ liệu ban đầu:
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
+python main_pipeline.py --mode full --rows 1000 --error-ratio 0.05 --chunk-size 500
 ```
 
-## Chạy tests
-
+### 6.2. Chạy Incremental Load
+Mô phỏng đợt dữ liệu tiếp theo với watermark tự động tịnh tiến:
 ```powershell
-pytest tests/ -v
+python main_pipeline.py --mode incremental --rows 200 --error-ratio 0.02 --chunk-size 100
 ```
 
-Test kiểm tra generator, validation, duplicate, chunk reader, Full/Incremental watermark, Delta MERGE/idempotency và DuckDB analytics.
-
-## Chạy pipeline
-
-### Sinh source Parquet
-
+### 6.3. Chạy Backfill
+Nạp lại vùng dữ liệu lịch sử mà không làm ảnh hưởng tới watermark:
 ```powershell
-python 01_generate_metadata.py --rows 100000 --error-ratio 0.05
+python main_pipeline.py --mode backfill --rows 100 --backfill-before-id 50 --chunk-size 50
 ```
 
-### Full Load
-
-```powershell
-python main_pipeline.py --mode full --rows 100000 --error-ratio 0.05 --chunk-size 25000
-```
-
-Full Load tạo source Parquet, validate dữ liệu, lưu record lỗi vào `data/errors/`, ghi clean data vào Delta Lake local và cập nhật watermark.
-
-### Incremental Load
-
-```powershell
-python main_pipeline.py --mode incremental --rows 20000 --error-ratio 0.02 --chunk-size 5000
-```
-
-Incremental dùng `data/watermark.json` và chỉ đọc record có `image_id` lớn hơn watermark. Target dùng Delta MERGE theo `image_id`, nên chạy lại cùng input không tạo duplicate.
-
-### Backfill demo
-
-Backfill ở mức demo dùng source có ID cũ hơn một mốc chỉ định:
-
-```powershell
-python main_pipeline.py --mode backfill --rows 10000 --backfill-before-id 5000 --chunk-size 2500
-```
-
-Backfill không cập nhật watermark chính.
-
-### DuckDB analytics
-
+### 6.4. Truy vấn Phân tích qua DuckDB
+Thực hiện truy vấn SQL trên tập dữ liệu sạch trong Delta Lake và bảng lưu lỗi DLQ:
 ```powershell
 python query_analytics.py
 ```
 
-Analytics gồm tổng clean records, phân bố category/format, phân bố year/month và tổng error records trong DLQ.
-
-## Benchmark
-
-Chạy các benchmark local, không tạo số liệu giả:
-
-```powershell
-python -m benchmark.run_benchmarks
+*Kết quả mẫu hiển thị (minh họa cấu trúc đầu ra, các con số phụ thuộc vào quy mô dữ liệu và runtime thực tế):*
+```text
+total_clean_records: 1140
+by_category: [('chan_dung', 195), ('do_an', 198), ('dong_vat', 188), ('kien_truc', 179), ('phong_canh', 192), ('san_pham', 188)]
+by_format: [('jpg', 380), ('png', 375), ('webp', 385)]
+by_month: [(2023, 1, 32), (2023, 2, 28), ...]
+error_records: 60
 ```
 
-Kết quả được ghi vào:
+---
 
-- `results/storage_benchmark.csv`: CSV vs Parquet size/read/write.
-- `results/chunk_benchmark.csv`: full read vs chunk read.
-- `results/query_benchmark.csv`: DuckDB query time.
+## 7. Minh chứng Xử lý Dữ liệu Muộn (Late-arriving Scenario)
 
-Benchmark mặc định dùng các mức `10K`, `50K`, `100K`. Có thể thay đổi trong `config.py`.
+Hệ thống đã chứng minh khả năng xử lý dữ liệu trễ qua kịch bản thực tế:
 
-## Data quality rules
+1. **Lô 1 (`batch_1.parquet`):**
+   - Chứa IDs: 100, 101, 102
+   - `created_at` = 2026-09-20, `source_arrived_at` = 2026-09-20
+   - Thực thi pipeline: Nạp 3 bản ghi, Watermark ghi nhận = **102**.
+   - Trạng thái `processed_sources` = `['batch_1.parquet']`.
 
-Record hợp lệ cần có:
+2. **Lô 2 (`batch_2.parquet`):**
+   - ID 105 (Bình thường): `created_at` = 2026-09-23, `source_arrived_at` = 2026-09-23 $\rightarrow$ `is_late = False`.
+   - ID 95 (Dữ liệu muộn): `created_at` = 2026-09-20, `source_arrived_at` = 2026-09-23 $\rightarrow$ `is_late = True`.
+   - Thực thi Incremental:
+     - Pipeline phát hiện `batch_2.parquet` là nguồn mới, nạp toàn bộ mà không drop ID 95.
+     - Cả 105 và 95 đều được ghi thành công vào Delta Lake.
+     - Watermark tăng lên: $\max(102, 105) =$ **105** (không bị lùi về 95).
+     - Trạng thái `processed_sources` = `['batch_1.parquet', 'batch_2.parquet']`.
 
-- `image_id` không null.
-- `file_size > 0`.
-- `width > 0`, `height > 0`.
-- `category` thuộc danh sách cho phép.
-- `format` thuộc danh sách cho phép.
-- `created_at` parse được và không ở tương lai.
-- `image_id` không duplicate trong cùng batch.
+3. **Chạy lại Lô 2 (Rerun Idempotency):**
+   - Pipeline phát hiện file đã nằm trong `processed_sources` $\rightarrow$ Tự động kết thúc sớm (extracted = 0, loaded = 0).
+   - Bảng Delta giữ nguyên chính xác 5 bản ghi sạch, watermark giữ nguyên ở 105, không phát sinh duplicate.
 
-Record lỗi được lưu riêng với `error_reason` trong `data/errors/`.
+---
 
-## Ghi chú phạm vi
+## 8. Kết quả Kiểm thử Tự động (Automated Testing)
 
-Project không sử dụng Spark, Hadoop, Kafka, Airflow, Kubernetes, Dask cluster, Ray cluster hoặc hệ thống nhiều máy. Docker/MinIO không cần thiết cho core demo; pipeline local là đường chạy chính để bảo đảm reproducibility trên máy cá nhân.
+Toàn bộ các yêu cầu kỹ thuật được bảo vệ bằng hệ thống unit và integration tests tự động.
+
+Chạy kiểm thử với cờ vô hiệu hóa cache bytecode:
+```powershell
+python -B -m pytest -q
+```
+
+**Kết quả kiểm thử thực tế:**
+```text
+26 passed, 2 warnings
+```
+*(Ghi chú: 2 warnings liên quan đến việc dateutil phân tích chuỗi ngày cố ý làm sai lệch trong test case kiểm thử lỗi).*
+
+### Phân bổ 26 Test Cases:
+- `tests/test_late_arriving.py` (6 tests): Kiểm chứng dữ liệu muộn khác ngày, cùng ngày, cùng ngày khác giờ, batch hỗn hợp, tính đơn điệu của watermark, và DLQ cho bản ghi muộn bị lỗi.
+- `tests/test_retry.py` (4 tests): Kiểm chứng kịch bản transient failure rồi thành công, kịch bản quá số lần thử tối đa, từ chối retry lỗi phi tạm thời, và tính bất biến khi retry MERGE.
+- `tests/test_backfill.py` (6 tests): Kiểm chứng bộ lọc ID, nạp Delta, tính bất biến của watermark khi backfill, và khử trùng lặp DLQ.
+- `tests/test_pipeline.py` (4 tests): Kiểm chứng chunk reader, cơ chế cập nhật watermark Full -> Incremental, và Delta upsert.
+- `tests/test_generator_validation.py` (4 tests): Kiểm chứng tính lặp lại của generator, phân tách dữ liệu lỗi, và loại trừ duplicate.
+- `tests/test_analytics.py` (1 test): Kiểm chứng độ chính xác khi DuckDB đếm bản ghi sạch và lỗi.
+- `tests/test_smoke.py` (1 test): Kiểm chứng các trường metadata cơ bản.

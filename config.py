@@ -30,6 +30,22 @@ for directory in (RAW_DATA_DIR, PROCESSED_DATA_DIR, ERROR_DATA_DIR, LAKEHOUSE_DI
 WATERMARK_FILE = os.path.join(LOCAL_DATA_DIR, "watermark.json")
 TARGET_DELTA_PATH = os.path.join(LAKEHOUSE_DIR, "clean_metadata")
 
+# --- Các đường dẫn bổ sung cho Dashboard (chỉ đọc, không dùng trong Core ETL) ---
+# Dashboard đọc trực tiếp từ Delta Lake và thư mục errors của Core ETL.
+SILVER_DATA_DIR = TARGET_DELTA_PATH          # Dashboard "Silver" = Delta Lake table
+GOLD_DATA_DIR = os.path.join(LOCAL_DATA_DIR, "gold")
+ERROR_RECORDS_PATH = os.path.join(ERROR_DATA_DIR, "*.parquet")
+
+# Storage backend — mặc định "local", không kết nối SeaweedFS/S3 khi demo
+STORAGE_BACKEND = "local"
+# (Các hằng S3 bên dưới chỉ là placeholder, không được dùng khi STORAGE_BACKEND="local")
+S3_ENDPOINT = "http://localhost:8333"
+S3_BUCKET = "big-data"
+S3_ACCESS_KEY = "admin"
+S3_SECRET_KEY = "secret"
+S3_REGION = "us-east-1"
+S3_PREFIXES = {}
+
 # --- Thiết kế metadata ảnh ---
 # image_id, filename, file_size, width, height, format, category, created_at, year, month
 CATEGORIES = ["san_pham", "chan_dung", "phong_canh", "do_an", "dong_vat", "kien_truc"]

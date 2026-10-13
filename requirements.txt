@@ -5,3 +5,5 @@ duckdb
 deltalake
 matplotlib
 pytest
+streamlit
+plotly

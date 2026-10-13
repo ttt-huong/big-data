@@ -1,0 +1,17 @@
+services:
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: big-data-seaweedfs
+    restart: unless-stopped
+    ports:
+      - "8333:8333"
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: secret
+      S3_BUCKET: big-data
+    command: ["mini", "-dir=/data"]
+    volumes:
+      - seaweed_data:/data
+
+volumes:
+  seaweed_data:

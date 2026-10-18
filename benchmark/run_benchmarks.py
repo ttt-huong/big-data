@@ -15,6 +15,8 @@ import config
 from generator.data_generator import generate_metadata
 from pipeline.extract import read_chunks
 
+from benchmark.analytics_baseline import run_queries as run_baseline
+from query_analytics import run_queries as run_optimized
 
 def benchmark_storage(rows: int) -> dict:
     frame = generate_metadata(rows, seed=7)
@@ -142,6 +144,50 @@ def benchmark_partitioning(rows: int) -> list[dict]:
         } for layout, durations in timings.items()]
 
     return results
+
+def benchmark_analytics_optimization(rows: int) -> list[dict]:
+    functions = {"baseline": run_baseline, "optimized": run_optimized}
+    timings = {name: [] for name in functions}
+
+    with tempfile.TemporaryDirectory(prefix="analytics_comparison_") as directory:
+        target = os.path.join(directory, "table")
+        errors = os.path.join(directory, "errors")
+        os.makedirs(errors)
+
+        frame = generate_metadata(rows, seed=9, error_ratio=0)
+        write_deltalake(target, frame, mode="overwrite", partition_by=["category"])
+
+        pd.DataFrame({
+            "image_id": [rows + 1, rows + 2],
+            "error_reason": ["INVALID_FORMAT", "INVALID_FORMAT;INVALID_FILE_SIZE"],
+        }).to_parquet(os.path.join(errors, "errors_sample.parquet"), index=False)
+
+        reference = None
+        for run in range(6):
+            order = list(functions)
+            if run % 2:
+                order.reverse()
+
+            for name in order:
+                start = time.perf_counter()
+                output = functions[name](target, errors)
+                elapsed = time.perf_counter() - start
+
+                if reference is None:
+                    reference = output
+                elif output != reference:
+                    raise AssertionError(f"Analytics results differ: {name}")
+
+                timings[name].append(elapsed)
+
+    return [{
+        "rows": rows,
+        "version": name,
+        "first_run_s": durations[0],
+        "repeat_median_s": statistics.median(durations[1:]),
+        "repeats": 5,
+        "results_equal": True,
+    } for name, durations in timings.items()]
 
 if __name__ == "__main__":
     storage = pd.DataFrame([benchmark_storage(rows) for rows in config.BENCHMARK_ROWS])

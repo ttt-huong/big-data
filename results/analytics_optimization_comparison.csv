@@ -1,0 +1,3 @@
+rows,version,first_run_s,repeat_median_s,repeats,results_equal
+1000000,baseline,0.25015109998639673,0.17927109997253865,5,True
+1000000,optimized,0.1114157999982126,0.11273670004447922,5,True

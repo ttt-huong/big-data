@@ -1,0 +1,3 @@
+rows,layout,data_files,threads,first_run_s,repeat_median_s,result_rows,repeats
+1000000,unpartitioned,1,4,0.08366049994947389,0.05499299999792129,3,5
+1000000,partitioned,6,4,0.030419799964874983,0.015454299980774522,3,5

@@ -1,5 +1,10 @@
 """Small, real local benchmarks for CSV/Parquet, chunks and DuckDB."""
 
+import statistics
+import tempfile
+
+from deltalake import DeltaTable, write_deltalake
+
 import os
 import time
 
@@ -39,6 +44,104 @@ def benchmark_query(rows: int) -> dict:
     elapsed = time.perf_counter() - start
     return {"rows": rows, "query_s": round(elapsed, 4), "groups": len(count)}
 
+def benchmark_delta_queries(rows: int) -> list[dict]:
+    queries = [
+        ("by_category", "SELECT category, COUNT(*), SUM(file_size), AVG(file_size) FROM clean_data GROUP BY category ORDER BY category", []),
+        ("by_month", "SELECT year, month, COUNT(*), SUM(file_size) FROM clean_data GROUP BY year, month ORDER BY year, month", []),
+        ("filtered_formats", "SELECT format, COUNT(*), SUM(file_size) FROM clean_data WHERE category = ? AND created_at >= CAST(? AS TIMESTAMP) AND created_at < CAST(? AS TIMESTAMP) GROUP BY format ORDER BY format", ["do_an", "2025-01-01", "2026-01-01"]),
+    ]
+    results = []
+
+    with tempfile.TemporaryDirectory(prefix="olap_benchmark_") as directory:
+        target = os.path.join(directory, "table")
+        frame = generate_metadata(rows, seed=9, error_ratio=0)
+        write_deltalake(target, frame, mode="overwrite", partition_by=["category"])
+
+        with duckdb.connect() as connection:
+            connection.register("clean_data", DeltaTable(target).to_pyarrow_dataset())
+
+            for name, sql, params in queries:
+                durations = []
+                first_result = None
+
+                for run in range(6):
+                    start = time.perf_counter()
+                    output = connection.execute(sql, params).fetchall()
+                    durations.append(time.perf_counter() - start)
+
+                    if run == 0:
+                        first_result = output
+                    elif output != first_result:
+                        raise AssertionError(f"Inconsistent results: {name}")
+
+                if rows == 100_000 and name == "filtered_formats":
+                    plan = connection.execute("EXPLAIN ANALYZE " + sql, params).fetchall()
+                    plan_path = os.path.join(config.LOCAL_RESULTS_DIR, "duckdb_filtered_explain.txt")
+                    with open(plan_path, "w", encoding="utf-8") as file:
+                        file.write("\n".join(str(row[1]) for row in plan))
+
+                results.append({
+                    "rows": rows,
+                    "query": name,
+                    "first_run_s": durations[0],
+                    "repeat_median_s": statistics.median(durations[1:]),
+                    "result_rows": len(first_result),
+                    "repeats": 5,
+                })
+
+    return results
+
+def benchmark_partitioning(rows: int) -> list[dict]:
+    sql = "SELECT format, COUNT(*), SUM(file_size) FROM clean_data WHERE category = ? AND created_at >= CAST(? AS TIMESTAMP) AND created_at < CAST(? AS TIMESTAMP) GROUP BY format ORDER BY format"
+    params = ["do_an", "2025-01-01", "2026-01-01"]
+    frame = generate_metadata(rows, seed=9, error_ratio=0)
+    timings = {"unpartitioned": [], "partitioned": []}
+    datasets = {}
+
+    with tempfile.TemporaryDirectory(prefix="partition_benchmark_") as directory:
+        for layout in timings:
+            target = os.path.join(directory, layout)
+            partitions = ["category"] if layout == "partitioned" else []
+            write_deltalake(target, frame, mode="overwrite", partition_by=partitions)
+            datasets[layout] = DeltaTable(target).to_pyarrow_dataset()
+
+        with duckdb.connect() as plain, duckdb.connect() as partitioned:
+            connections = {"unpartitioned": plain, "partitioned": partitioned}
+
+            for layout, connection in connections.items():
+                connection.execute("SET threads = 4")
+                connection.register("clean_data", datasets[layout])
+
+            reference = None
+            for run in range(6):
+                order = list(connections)
+                if run % 2:
+                    order.reverse()
+
+                for layout in order:
+                    start = time.perf_counter()
+                    output = connections[layout].execute(sql, params).fetchall()
+                    elapsed = time.perf_counter() - start
+
+                    if reference is None:
+                        reference = output
+                    elif output != reference:
+                        raise AssertionError("Partition layouts returned different results")
+
+                    timings[layout].append(elapsed)
+
+        results = [{
+            "rows": rows,
+            "layout": layout,
+            "data_files": len(datasets[layout].files),
+            "threads": 4,
+            "first_run_s": durations[0],
+            "repeat_median_s": statistics.median(durations[1:]),
+            "result_rows": len(reference),
+            "repeats": 5,
+        } for layout, durations in timings.items()]
+
+    return results
 
 if __name__ == "__main__":
     storage = pd.DataFrame([benchmark_storage(rows) for rows in config.BENCHMARK_ROWS])
@@ -50,3 +153,6 @@ if __name__ == "__main__":
     print("Storage benchmark:\n", storage)
     print("Chunk benchmark:\n", chunks)
     print("Query benchmark:\n", queries)
+    delta_queries = pd.DataFrame([result for rows in config.BENCHMARK_ROWS for result in benchmark_delta_queries(rows)])
+    delta_queries.to_csv(os.path.join(config.LOCAL_RESULTS_DIR, "delta_query_benchmark.csv"), index=False)
+    print("Delta query benchmark:\n", delta_queries)
